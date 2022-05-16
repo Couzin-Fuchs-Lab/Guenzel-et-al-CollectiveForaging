@@ -1,8 +1,35 @@
+%% Information integration for nutritional decision-making in desert locusts
+% Swarms of the migratory desert locust can extend over several hundred 
+% square kilometres, and starvation compels this ancient pest to devour 
+% everything in its path. Theory suggests that gregarious behaviour 
+% benefits foraging efficiency over a wide range of spatial food 
+% distributions. However, despite the importance of identifying the 
+% processes by which swarms locate and select feeding sites to predict 
+% their progression, the role of social cohesion during foraging remains 
+% elusive. We investigated the evidence accumulation and information 
+% integration processes that underlie locusts' nutritional decision-making 
+% by employing a Bayesian formalism on high-resolution tracking data from 
+% foraging locusts. We tested individual gregarious animals and groups of 
+% different sizes in a 2-choice behavioural assay in which food patch 
+% qualities were either different or similar. We then predicted the 
+% decisions of individual locusts based on personally acquired and socially 
+% derived evidence by disentangling the relative contributions of each 
+% information class. Our study suggests that locusts balance incongruent 
+% evidence but reinforce congruent ones, resulting in more confident 
+% assessments when evidence aligns. We provide new insights into the 
+% interplay between personal experience and social context in locust 
+% foraging decisions which constitute a powerful empirical system to study 
+% local individual decisions and their consequent collective dynamics.
+%
+% This is file contains all helper functions for the main analysis.
+%
+% Version: 16-May-2022 (MATLAB R2022a)
+
 classdef SubFcn
     %SUBFCN Cointains subfunctions for food patch analysis.
     % Detailed explanation goes here ...
     % Version:
-    % 17-Feb-2021 (R2020a) Yannick Günzel
+    % 17-Feb-2021 (R2020a) Yannick G??nzel
     
     properties
     end
@@ -1051,8 +1078,7 @@ classdef SubFcn
                         Switching_t1(2,2) = Switching_t1(2,2)+1;
                     end
                 end%iEvent
-                Switching_t1 = Switching_t1/sum(sum(Switching_t1));
-            end
+            end%if
         end%FCN:GetSwitching_t1
         
         function Switching_t2 = GetSwitching_t2(TC_A, TC_B)
@@ -1096,7 +1122,6 @@ classdef SubFcn
                         Switching_t2(4,2) = Switching_t2(4,2)+1;
                     end%if
                 end%iEvent
-                Switching_t2 = Switching_t2/sum(sum(Switching_t2));
             end%if
         end%FCN:GetSwitching_t2
         
@@ -1427,7 +1452,7 @@ classdef SubFcn
             end%if completely use default values
         end%FCN:FillEmptySwarmPropertyValues
         
-        function ModelOutput = InfoIntegrationModel(DATA)
+        function ModelOutput = InfoIntegrationModel(DATA, tau, IndScale)
             
             %--------------------------------------------------------------
             % Setting
@@ -1435,32 +1460,51 @@ classdef SubFcn
             SET.InteractionRange_SD = 7; %[cm]
             SET.dArena = 90; %[cm]
             SET.FrameRate = 25;
-            SET.categorialData = logical([0 1 1 zeros(1,8)]);
-            SET.N_Boot = 100;
-            SET.HistoryCategories = {...
-                1;... 0
-                2;... +
-                3;... ++
-                4;... -
-                5;... --
-                6;... +-
-                7;... -+
-                };
+            if tau(1) == 0
+                SET.TauInd = [];
+            else
+                SET.TauInd = tau(1);
+            end
+            if tau(2) == 0
+                SET.TauSoc = [];
+            else
+                SET.TauSoc = tau(2);
+            end
+            SET.minSpeed = 0.25;
+            SET.N_bin = 7;
+            SET.BFnames = {'ind_num_visit'; 'ind_experience_cumul'; 'soc_density_cumul'; 'ind_experience_leaky'; 'soc_density_leaky'};
+            SET.ProbNames = [SET.BFnames; 'integration_cumul'; 'integration_leaky'];
+            
+%             BetaDist = @(a,b) (a-1)./(a+b-2);
+            BetaDist = @(a,b) (a)./(a+b);
             
             %--------------------------------------------------------------
             % Extract data
             %--------------------------------------------------------------
+            % Prepare table of odds
+            for iBF = 1:length(SET.BFnames)
+                oddTbl.(SET.BFnames{iBF}) = nan(2,15000);
+            end%iBF
+            % Prepare table taht keeps track of animal and trial identities
+            Tbl = nan(2,15000);
             currTrialList = fieldnames(DATA);
             % Iterate over trials
             cnt = 1;
+            cnt_ani = 0;
+            cnt_trial = 0;
             for iTrial = 1:length(currTrialList)
+                cnt_trial = cnt_trial+1;
                 % Shortcut to data
                 currData = DATA.(currTrialList{iTrial});
                 % Iterate over all animals
                 for iAni = 1:size(currData.pos_x,2)
+                    cnt_ani = cnt_ani+1;
+                    % Create time vector
+                    timeVec = linspace(0, size(currData.pos_x,1)/SET.FrameRate - (1/SET.FrameRate), size(currData.pos_x,1));
+                    dt = 1/SET.FrameRate;
                     % Create helper variables for the different patches
-                    helper_A = currData.AtPatch_A(:,iAni); % HQ patch
-                    helper_B = currData.AtPatch_B(:,iAni); % LQ patch
+                    helper_A = currData.AtPatch_A(:,iAni);
+                    helper_B = currData.AtPatch_B(:,iAni);
                     % Get joining events
                     helper_A_diff = diff(helper_A);
                     helper_B_diff = diff(helper_B);
@@ -1474,378 +1518,152 @@ classdef SubFcn
                         join_B = [1; join_B];
                     end
                     % Concat joining event
-                    JoinEvents = [join_A(:) ones(length(join_A),1); join_B(:) -ones(length(join_B),1)];
+                    JoinEvents = [join_A(:) ones(length(join_A),1); join_B(:) zeros(length(join_B),1)];
                     % Sort joining event
                     [~,idx] = sort(JoinEvents(:,1));
                     JoinEvents = JoinEvents(idx,:);
+                    % Get interval between joining events
+                    if size(JoinEvents,1)==1
+                        JoinEvents = [JoinEvents, NaN];
+                    elseif size(JoinEvents,1)>1
+                        JoinEvents = [JoinEvents, [NaN; diff(JoinEvents(:,1))]];
+                    end
                     % Patch density
                     dens_A = currData.PatchDensity_A;
                     dens_A = dens_A - normpdf(currData.Dist2Patch_A(:,iAni), 0, SET.InteractionRange_SD/(SET.dArena/2))/normpdf(0, 0, SET.InteractionRange_SD/(SET.dArena/2));
                     dens_B = currData.PatchDensity_B;
                     dens_B = dens_B - normpdf(currData.Dist2Patch_B(:,iAni), 0, SET.InteractionRange_SD/(SET.dArena/2))/normpdf(0, 0, SET.InteractionRange_SD/(SET.dArena/2));
-                    DensityPrefIndex = (dens_A-dens_B) / (size(currData.pos_x,2)-1);
+                    % For binning, keep track of actual densities
+                    % Intermittent motion
+                    StopBout = currData.rawSpeed(:,iAni)<SET.minSpeed;
+                    StopBout = StopBout.*(~(currData.AtPatch_A(:,iAni)+currData.AtPatch_B(:,iAni)));
+                    % Accumulated evidence (include memory extinction)
+                    % PERSONAL
+                    hist_A_cumul = cumsum(helper_A*IndScale(1))/SET.FrameRate+1+1e-10;
+                    hist_B_cumul = cumsum(helper_B*IndScale(2))/SET.FrameRate+1+1e-10;
+                    hist_A_leaky = SubFcn.leakyIntegrator(helper_A*IndScale(1), SET.TauInd, timeVec, dt)/SET.FrameRate+1+1e-10;
+                    hist_B_leaky = SubFcn.leakyIntegrator(helper_B*IndScale(2), SET.TauInd, timeVec, dt)/SET.FrameRate+1+1e-10;
+                    %SOCIAL
+                    dens_A_cumul = cumsum(dens_A(:).*StopBout(:))+1+1e-10;
+                    dens_B_cumul = cumsum(dens_B(:).*StopBout(:))+1+1e-10;
+                    dens_A_leaky = SubFcn.leakyIntegrator(dens_A(:).*StopBout(:), SET.TauSoc, timeVec, dt)+1+1e-10;
+                    dens_B_leaky = SubFcn.leakyIntegrator(dens_B(:).*StopBout(:), SET.TauSoc, timeVec, dt)+1+1e-10;
                     
+
                     % Iterate over consecutive joinings and combine
                     % everything
                     for iEvent = 1:size(JoinEvents,1)
-                        % "Where are we going?"
-                        Tbl(cnt,1) = JoinEvents(iEvent,2);
-                        % "Where have we been before?"
-                        if iEvent == 1
-                            Tbl(cnt,2) = 1;
-                        elseif iEvent == 2
-                            if JoinEvents(iEvent-1,2) == 1
-                                Tbl(cnt,2) = 2;
-                            elseif JoinEvents(iEvent-1,2) == -1
-                                Tbl(cnt,2) = 4;
-                            end
-                        else
-                            if (JoinEvents(iEvent-1,2)==1 && JoinEvents(iEvent-2,2)==1)
-                                Tbl(cnt,2) = 3;
-                            elseif (JoinEvents(iEvent-1,2)==-1 && JoinEvents(iEvent-2,2)==-1)
-                                Tbl(cnt,2) = 5;
-                            elseif (JoinEvents(iEvent-2,2)==1 && JoinEvents(iEvent-1,2)==-1)
-                                Tbl(cnt,2) = 6;
-                            elseif (JoinEvents(iEvent-2,2)==-1 && JoinEvents(iEvent-1,2)==1)
-                                Tbl(cnt,2) = 7;
-                            end
-                        end%if
-                        % "What do we SEE? - Density"
-                        Tbl(cnt,3) = dens_A(JoinEvents(iEvent,1));
-                        Tbl(cnt,4) = dens_B(JoinEvents(iEvent,1));
-                        Tbl(cnt,5) = size(currData.pos_x,2)-(Tbl(cnt,3)+Tbl(cnt,4));
-                        cnt = cnt+1;
+                        % Exclude animals that were feeding from the
+                        % beginning
+                        if JoinEvents(iEvent,1)~=1
+                            % -----
+                            % Get the number of past visits to each shelter
+                            if iEvent == 1
+                                oddTbl.ind_num_visit(:,cnt) = [0; 0]+1+1e-10;
+                            else
+                                if JoinEvents(iEvent-1,2) == 1
+                                    oddTbl.ind_num_visit(:,cnt) = oddTbl.ind_num_visit(:,cnt-1) + [1;0];
+                                elseif JoinEvents(iEvent-1,2) == 0
+                                    oddTbl.ind_num_visit(:,cnt) = oddTbl.ind_num_visit(:,cnt-1) + [0;1];
+                                end%if
+                            end%if
+                            
+                            % -----
+                            % Get the cumulative time an animal has spent
+                            oddTbl.ind_experience_cumul(:,cnt) = [hist_A_cumul(JoinEvents(iEvent,1)); hist_B_cumul(JoinEvents(iEvent,1))];
+                            % -----
+                            % Get the prevailing animal density
+                            oddTbl.soc_density_cumul(:,cnt) = [dens_A_cumul(JoinEvents(iEvent,1)); dens_B_cumul(JoinEvents(iEvent,1))];
+                            % -----
+                            % Get the past experience of the animal with
+                            % the patch
+                            oddTbl.ind_experience_leaky(:,cnt) = [hist_A_leaky(JoinEvents(iEvent,1)); hist_B_leaky(JoinEvents(iEvent,1))];
+                            % -----
+                            % Get the prevailing animal density
+                            oddTbl.soc_density_leaky(:,cnt) = [dens_A_leaky(JoinEvents(iEvent,1)); dens_B_leaky(JoinEvents(iEvent,1))];
+                            % -----
+                            % Keep track of actual choice, animal and trial
+                            % identity
+                            Tbl(1,cnt) = JoinEvents(iEvent,2);
+                            Tbl(2,cnt) = cnt_ani;
+                            Tbl(3,cnt) = cnt_trial;
+                            % -----
+                            
+                            % Update counter
+                            cnt = cnt+1;
+                        end
                     end%iEvent
                 end%iAni
             end%iTrial
-            % Clean up
-            clearvars -except SET Tbl      
+            % Cut
+            Tbl = Tbl(:,1:cnt-1);
+            oddTbl.ind_num_visit = oddTbl.ind_num_visit(:,1:cnt-1);
+            oddTbl.ind_experience_cumul = oddTbl.ind_experience_cumul(:,1:cnt-1);
+            oddTbl.soc_density_cumul = oddTbl.soc_density_cumul(:,1:cnt-1);
+            oddTbl.ind_experience_leaky = oddTbl.ind_experience_leaky(:,1:cnt-1);
+            oddTbl.soc_density_leaky = oddTbl.soc_density_leaky(:,1:cnt-1);
+                        
             
+            % Get likelihood ratio and resulting log(Bayes factor) of
+            % different channels
+            % -------------------------------------------------------------
+            for iProb = 1:length(SET.BFnames)
+                LR.(SET.ProbNames{iProb}) = ([BetaDist(oddTbl.(SET.ProbNames{iProb})(1,:), oddTbl.(SET.ProbNames{iProb})(2,:)); BetaDist(oddTbl.(SET.ProbNames{iProb})(2,:), oddTbl.(SET.ProbNames{iProb})(1,:))]);
+                idx = find(Tbl(1,:)==0);
+                LR.(SET.ProbNames{iProb})(:,idx) = [LR.(SET.ProbNames{iProb})(2,idx); LR.(SET.ProbNames{iProb})(1,idx)];
+                BF.(SET.ProbNames{iProb}) = log(LR.(SET.ProbNames{iProb})(1,:) ./ LR.(SET.ProbNames{iProb})(2,:));
+            end%iProb    
             
-            %--------------------------------------------------------------
-            % Prepare data
-            %--------------------------------------------------------------
-            popBoth = abs((Tbl(:,3)-Tbl(:,4)) ./ (Tbl(:,3)+Tbl(:,4)));
-            % Pool categories
-            Tbl(Tbl(:,2)==1,2) = 0;                 % 0
-            Tbl(Tbl(:,2)==2 | Tbl(:,2)==3,2) = 1;   % +  / ++
-            Tbl(Tbl(:,2)==4 | Tbl(:,2)==5,2) = 2;   % -  / --
-            Tbl(Tbl(:,2)==6 | Tbl(:,2)==7,2) = 3;   % +- / -+
-            personal = Tbl(:,2);
-            % Normalize data
-            Tbl(:,3:end) = zscore(Tbl(:,3:end));
-            % --- input
-            popA = Tbl(:,3);
-            popB = Tbl(:,4);
-            popOut = Tbl(:,5);
-            bias = ones(size(Tbl,1),1);
-            input = [Tbl(:,3:end), ones(size(Tbl,1),1), personal];
-            % --- output
-            output = -ones(size(Tbl,1),2);
-            output(find(Tbl(:,1)==1),1) = 1;
-            output(find(Tbl(:,1)==-1),2) = 1;
+            LR.integration_cumul = LR.ind_experience_cumul .* LR.soc_density_cumul;% .* LR.ind_num_visit;
+            LR.integration_leaky = LR.ind_experience_leaky .* LR.soc_density_leaky;% .* LR.ind_num_visit;
+            
+            BF.integration_cumul = log(LR.integration_cumul(1,:)./LR.integration_cumul(2,:));
+            BF.integration_leaky = log(LR.integration_leaky(1,:)./LR.integration_leaky(2,:));
             
             
             
-            %--------------------------------------------------------------
-            % Split data
-            %--------------------------------------------------------------
-            hpartition = cvpartition(size(input,1),'Holdout',0.3);
-            % --- train
-            idxTrain = training(hpartition);
-            input_training = input(idxTrain,:);
-            output_training = output(idxTrain,:);
-            % --- test
-            idxTest = test(hpartition);
-            input_test = input(idxTest,:);
-            output_test = input(idxTest,:);
+            % Keep things together for output
+            % -------------------------------------------------------------
+            ModelData.oddTbl = oddTbl;
+            ModelData.LR = LR;
+            ModelData.BF = BF;
             
             
-            %--------------------------------------------------------------
-            % Prepare network
-            %--------------------------------------------------------------
-            % Properties
-            SET.Epsilon = 0.0025;
-            SET.BatchSize = 25;
-            SET.Iterations = 10000;
-            SET.Momentum = 0.75;
-            % Weight matrix
-            weights = randn(size(input,2), size(output,2));
-            weights(end,:)= [1 -1];
+            % Get average performance per animal
+            % -------------------------------------------------------------
+            SET.unique_ani = sort(unique(Tbl(2,:)));
+            % --- Preallocation
+            for iProb = 1:length(SET.ProbNames)
+                AvgPerformance.BF.(SET.ProbNames{iProb}) = nan(length(SET.unique_ani),1);
+                AvgPerformance.probCorrect.(SET.ProbNames{iProb}) = nan(length(SET.unique_ani),1);
+            end%iProb
+            % Group by animals
+            for iAni = 1:length(SET.unique_ani)
+                % Get correct indices
+                idx = find(Tbl(2,:)==SET.unique_ani(iAni));
+                % Repeat for each info channel
+                for iProb = 1:length(SET.ProbNames)
+                    if ~isempty(idx)
+                        AvgPerformance.BF.(SET.ProbNames{iProb})(iAni,1) = nanmean(ModelData.BF.(SET.ProbNames{iProb})(idx));
+                        helper = (ModelData.LR.(SET.ProbNames{iProb})(1,idx)>ModelData.LR.(SET.ProbNames{iProb})(2,idx)) == Tbl(1,idx);
+                        helper(ModelData.LR.(SET.ProbNames{iProb})(1,idx)==ModelData.LR.(SET.ProbNames{iProb})(2,idx)) = 0.5;
+                        AvgPerformance.probCorrect.(SET.ProbNames{iProb})(iAni,1) = nanmean(helper);
+                        clear helper
+                    end%if empty bin
+                end%iProb
+            end%iAni
             
-            
-            %--------------------------------------------------------------
-            % Train network
-            %--------------------------------------------------------------
-            [bestPerform.soc_train, ~, bestWeights, ~] = SubFcn.NeuroNet(input_training, output_training, weights, SET,...
-                0, 0,...
-                0, 0,...
-                'train');
-            
-            %--------------------------------------------------------------
-            % Test network
-            %--------------------------------------------------------------
-            [bestPerform.soc_test, ~, ~, ~] = SubFcn.NeuroNet(input_test, output_test, bestWeights, SET,...
-                0, 0,...
-                0, 0,...
-                'test');
-            
-            %--------------------------------------------------------------
-            % Prepare optimization process
-            %--------------------------------------------------------------
-            % Optimize
-            in_cat0 = optimizableVariable('in_cat0',[-1 1]);
-            in_cat1 = optimizableVariable('in_cat1',[-1 1]);
-            in_cat2 = optimizableVariable('in_cat2',[-1 1]);
-            in_cat3 = optimizableVariable('in_cat3',[-1 1]);
-            
-            
-            %--------------------------------------------------------------------------
-            % Get Parameter: add personal
-            %--------------------------------------------------------------------------
-            vars = [in_cat0, in_cat1, in_cat2,in_cat3];
-            fun = @(vars)SubFcn.NeuroNet(input_training, output_training, bestWeights, SET,...
-                vars.in_cat0, vars.in_cat1,...
-                vars.in_cat2, vars.in_cat3,...
-                'test');
-            results = bayesopt(fun,vars,...
-                'AcquisitionFunctionName','expected-improvement-plus',...
-                'IsObjectiveDeterministic',true,...
-                'MaxObjectiveEvaluations',500,...
-                'NumSeedPoints',50,...
-                'GPActiveSetSize',500,...
-                'Verbose',0,...
-                'NumCoupledConstraints',1,...
-                'UseParallel',true);
-            % Get weights
-            personal_input = table2array(results.XAtMinEstimatedObjective);
-            
-            
-            %--------------------------------------------------------------
-            % Test network
-            %--------------------------------------------------------------
-            [bestPerform.both_train, ~, ~, ~] = SubFcn.NeuroNet(input_training, output_training, bestWeights, SET,...
-                personal_input(1), personal_input(2),...
-                personal_input(3), personal_input(4),...
-                'test');
-            [bestPerform.both_test, ~, ~, ~] = SubFcn.NeuroNet(input_test, output_test, bestWeights, SET,...
-                personal_input(1), personal_input(2),...
-                personal_input(3), personal_input(4),...
-                'test');
-            
-            
-            %--------------------------------------------------------------
-            % Predict: social only
-            %--------------------------------------------------------------
-            [bestPerform.soc, ~, ~, UserData_soc] = SubFcn.NeuroNet(input, output, bestWeights, SET,...
-                0,0,...
-                0,0,...
-                'predict',popBoth);
-            
-            
-            %--------------------------------------------------------------
-            % Predict: with personal
-            %--------------------------------------------------------------
-            [bestPerform.both, ~, ~, UserData_both] = SubFcn.NeuroNet(input, output, bestWeights, SET,...
-                personal_input(1), personal_input(2),...
-                personal_input(3), personal_input(4),...
-                'predict',popBoth);
-                     
-            
-            %--------------------------------------------------------------
-            % Pass to output
-            %--------------------------------------------------------------
-            ModelOutput.UserData_soc = UserData_soc;
-            ModelOutput.UserData_both = UserData_both;
-            ModelOutput.Performance = bestPerform;
-            ModelOutput.weights = bestWeights;
-            ModelOutput.personal_input = personal_input;
+            % Compile output
+            % -------------------------------------------------------------
+            ModelOutput.Tbl = Tbl;
+            ModelOutput.ModelData = ModelData;
+            ModelOutput.AvgPerformance = AvgPerformance;
             
         end%FCN:OptEvidenceModel
-        
-        
-        function [bestPerform, CoupledConstraints, bestWeights, UserData] = NeuroNet(input, output, weights, SET,...
-                in_cat0, in_cat1,...
-                in_cat2, in_cat3,...
-                task,popBoth)
-            CoupledConstraints = -1;
-            
-            % Prepare history-bias
-            for iJoin = 1:size(input,1)
-                input(iJoin,end) = eval(['in_cat',num2str(input(iJoin,end))]);
-            end%iJoin            
-            
-            switch task
-                
-                case 'train'      
-                    bestPerform = inf;
-                    UserData = [];
-                    for iIter = 1:SET.Iterations
-                        % Change in weights
-                        dW = zeros(size(weights));      %current
-                        dW_past = zeros(size(weights)); %past
-                        for iBatch = 1:SET.BatchSize
-                            % Draw a random sample
-                            idx = randsample(1:size(input,1),1);
-                            curr_in = input(idx,:);
-                            curr_out = output(idx,:);
-                            % Predict
-                            prediction = curr_in*weights;
-                            % TanH activation function
-                            prediction = (exp(prediction)-exp(-prediction)) ./ (exp(prediction)+exp(-prediction));
-                            % Calculate errors
-                            delta = curr_out-prediction;
-                            % Calculate change in weights
-                            dW = dW + SET.Epsilon * ([curr_in', curr_in'].*[ones(length(curr_in),1)*delta(1),ones(length(curr_in),1)*delta(2)]);
-                        end%iBatch
-                        % Apply change in weights
-                        weights = weights+dW+dW_past*SET.Momentum;
-                        dW_past = dW;
-                        % Get current state of predictions
-                        target = zeros(size(input,1),2);
-                        prediction = zeros(size(input,1),2);
-                        for iIn = 1:size(input,1)
-                            curr_in = input(iIn,:);
-                            curr_out = output(iIn,:);
-                            target(iIn,:) = [curr_out(1)>curr_out(2), curr_out(2)>curr_out(1)];
-                            curr_prediction = curr_in*weights;
-                            prediction(iIn,:)  = [curr_prediction(1)>curr_prediction(2), curr_prediction(2)>curr_prediction(1)];
-                        end%iIn
-                        performance = 1-mean((target(:,1)==prediction(:,1)) & (target(:,2)==prediction(:,2)));
-                        % Save the best performing network
-                        if performance < bestPerform
-                            bestPerform = performance;
-                            bestWeights = weights;
-                        end%if
-                        % Update epsilon
-                        % epsilon = epsilon-(epsilon/1000);
-                    end%iIter
-                    
-                    
-                case 'test'
-                    UserData = [];
-                    bestWeights = weights;
-                    % Get current state of predictions
-                    target = zeros(size(input,1),2);
-                    prediction = zeros(size(input,1),2);
-                    for iIn = 1:size(input,1)
-                        curr_in = input(iIn,:);
-                        curr_out = output(iIn,:);
-                        target(iIn,:) = [curr_out(1)>curr_out(2), curr_out(2)>curr_out(1)];
-                        curr_prediction = curr_in*weights;
-                        prediction(iIn,:)  = [curr_prediction(1)>curr_prediction(2), curr_prediction(2)>curr_prediction(1)];
-                    end%iIn
-                    bestPerform = 1-mean((target(:,1)==prediction(:,1)) & (target(:,2)==prediction(:,2)));                    
-
-            
-                case 'predict'
-                    bestWeights = weights;
-                    % Get current state of predictions
-                    target = zeros(size(input,1),2);
-                    prediction = zeros(size(input,1),2);
-                    for iIn = 1:size(input,1)
-                        curr_in = input(iIn,:);
-                        curr_out = output(iIn,:);
-                        target(iIn,:) = [curr_out(1)>curr_out(2), curr_out(2)>curr_out(1)];
-                        curr_prediction = curr_in*weights;
-                        prediction(iIn,:)  = [curr_prediction(1)>curr_prediction(2), curr_prediction(2)>curr_prediction(1)];
-                    end%iIn
-                    bestPerform = 1-mean((target(:,1)==prediction(:,1)) & (target(:,2)==prediction(:,2)));      
-                    idx_shuffle = randsample(1:length(bestPerform), length(bestPerform));
-                    UserData.shufflePerform = 1-mean((target(idx_shuffle,1)==prediction(:,1)) & (target(idx_shuffle,2)==prediction(:,2)));
-                    
-                    % Bin data
-%                     popBoth = abs(input(:,1)-input(:,2));
-                    N_bin = 10;
-                    [~, edges, bin] = histcounts(popBoth, linspace(min(popBoth), max(popBoth)+1e-10, N_bin+1));
-                    xVec = edges(1:end-1)+mean(diff(edges))/2;
-                    UserData.BinnedData = nan(5, N_bin);
-                    for iBin = 1:N_bin
-                        idx = find(bin == iBin);
-                        if ~isempty(idx)
-                            UserData.BinnedData(1, iBin) = xVec(iBin);
-                            Correct = (target(idx,1)==prediction(idx,1)) & (target(idx,2)==prediction(idx,2));
-                            UserData.BinnedData(2, iBin) = mean(bootstrp(5000, @nanmean, Correct));
-                            UserData.BinnedData([3 4], iBin) = [...
-                                UserData.BinnedData(2, iBin) - std(bootstrp(5000, @nanmean, Correct));...
-                                UserData.BinnedData(2, iBin) + std(bootstrp(5000, @nanmean, Correct))];
-                            % shuffle
-                            idx_shuffle = randsample(idx, length(idx));
-                            Correct_shuffled = (target(idx_shuffle,1)==prediction(idx,1)) & (target(idx_shuffle,2)==prediction(idx,2));
-                            UserData.BinnedData(5, iBin) = mean(bootstrp(5000, @nanmean, Correct_shuffled));
-                        end
-                    end%iBin
-                    
-            end
-        end%FCN:NeuroNet
-        
         
         function merge = MergeStructs(x,y)
             merge = cell2struct([struct2cell(x);struct2cell(y)],[fieldnames(x);fieldnames(y)]);
         end%FCN:MergeStructs
-        
-        function out = PsyFcn(x, alpha, beta, gama, delta, epsilon)
-            % aplha  - internal threshold
-            % beta   - internal sensitivity
-            % gama   - guess rate
-            % delta  - lapse rate
-            % https://www.psy.lmu.de/exp/teaching/courses/w7-psychometric-function.pdf
-            %
-            % PsyFcn(x, alpha, beta, gama, delta) = gama + (1-gama-delta)*F(x,alpha,beta)
-            % with F(x,alpha,beta) = 1 / (1+exp(-beta*(x-alpha)))
-            
-            % Create psychometric function
-            F = @(x,alpha,beta) ones(size(x,1),size(x,2)) ./ (1+exp(-beta*(x-alpha)));
-            % Normalize
-            F_norm = @(x,alpha,beta) (F(x,alpha,beta)-F(0,alpha,beta))./(F(1,alpha,beta)-F(0,alpha,beta));
-            % Apply guess and lapse rate
-            out = gama + (1-gama-delta)*F_norm(x,alpha,beta) + epsilon;
-            
-            %             % Create psychometric function
-            %             F = @(x,alpha,beta) ones(size(x,1),size(x,2)) ./ (1+exp(-beta*(x-alpha)));
-            %             % Normalize
-            %             F_norm = @(x,alpha,beta) (F(x,alpha,beta)-F(-1,alpha,beta))./((F(1,alpha,beta)-F(-1,alpha,beta))*2);
-            %             % Apply guess and lapse rate
-            %             out = gama + (1-gama-delta) * (F_norm(x,alpha-0.5,beta) + (F_norm(x,alpha+0.5,beta)));
-            
-        end%FCN:SubFcn.PsyFcn
-        
-        function Priors = EstimateModelPriors(TrialList)
-            % Get trial names
-            currTrialList = fieldnames(TrialList);
-            % Prepare output
-            Priors = [0 0];
-            % Iterate over trials
-            for iTrial = 1:length(currTrialList)
-                % Shortcut to data
-                currData = TrialList.(currTrialList{iTrial});
-                % Create helper variables for the different patches
-                helper_A = currData.AtPatch_A; % HQ patch
-                helper_B = currData.AtPatch_B; % LQ patch
-                % Get joining events for all animals
-                helper_A_diff = diff(helper_A);
-                helper_B_diff = diff(helper_B);
-                % Iterate over animals
-                for iAni = 1:size(helper_A_diff,2)
-                    join_A = find(helper_A_diff(:,iAni)>0);
-                    join_B = find(helper_B_diff(:,iAni)>0);
-                    % If a patch has not been visited
-                    if isempty(join_A)
-                        join_A = inf;
-                    end%if no A
-                    if isempty(join_B)
-                        join_B = inf;
-                    end %if no B
-                    % Get which patch was visited first
-                    if join_A(1) < join_B(1)
-                        Priors = Priors + [1 0];
-                    elseif join_B(1) < join_A(1)
-                        Priors = Priors + [0 1];
-                    end%if join A or B
-                end%iAni
-            end%iTrial
-            Priors = Priors/sum(Priors);
-        end%FCN:EstimateModelPriors
         
         function lpf = tc_lowpass(x, tau)
             % TC_LOWPASS returns the low-pass filtered input signals x, i.e.
@@ -1877,6 +1695,16 @@ classdef SubFcn
             PI = (A(:)-B(:))./(A(:)+B(:));
         end%FCN:PreferenceIndex
         
+        function y = leakyIntegrator(x,tau,t,dt)
+            y =zeros(size(t));
+            nt = length(t);
+            for iT=1:(nt-1)
+                dy = x(iT)-y(iT)/tau;
+                y(iT+1)=y(iT)+dy*dt;
+            end
+            
+        end%FCN
+        
         function ConfMat = GetConfMat(Observed, Predicted)
             % Layout of the resulting ConfMat will be:
             %
@@ -1890,20 +1718,479 @@ classdef SubFcn
             % --- TP
             ConfMat(1,1) = length(find(Observed == 1 & Predicted == 1));
             % --- FP
-            ConfMat(1,2) = length(find(Observed == -1 & Predicted == 1));
+            ConfMat(1,2) = length(find(Observed == 0 & Predicted == 1));
             % --- FN
-            ConfMat(2,1) = length(find(Observed == 1 & Predicted == -1));
+            ConfMat(2,1) = length(find(Observed == 1 & Predicted == 0));
             % --- TN
-            ConfMat(2,2) = length(find(Observed == -1 & Predicted == -1));
-            %             % Normalize
-            %             ConfMat_norm = ConfMat/sum(sum(ConfMat));
-            %             ConfMat_norm = ConfMat./[sum(ConfMat(:,1)), sum(ConfMat(:,2)); sum(ConfMat(:,1)), sum(ConfMat(:,2))];
-            %             % Check
-            %             ConfMat_norm(:,find(sum(ConfMat)==0)) = 0;
-            %             if sum(sum(ConfMat_norm)) == 0
-            %                 ConfMat_norm = nan(2);
-            %             end
+            ConfMat(2,2) = length(find(Observed == 0 & Predicted == 0));
+            % Normalize
+            ConfMat = ConfMat./[sum(ConfMat(:,1)), sum(ConfMat(:,2)); sum(ConfMat(:,1)), sum(ConfMat(:,2))];
         end%FCN:ConfMat
         
+        function varargout = imrotate_old255(varargin)
+            %IMROTATE_OLD Rotate image (old version).
+            %   This function provides the IMROTATE function as computed by versions
+            %   9.2 (R2015a) and earlier of the Image Processing Toolbox.
+            %
+            %   B = IMROTATE_OLD(A,ANGLE) rotates image A by ANGLE degrees in a
+            %   counterclockwise direction around its center point. To rotate the image
+            %   clockwise, specify a negative value for ANGLE. IMROTATE_OLD makes the output
+            %   image B large enough to contain the entire rotated image. IMROTATE_OLD uses
+            %   nearest neighbor interpolation, setting the values of pixels in B that
+            %   are outside the rotated image to 0 (zero).
+            %
+            %   B = IMROTATE_OLD(A,ANGLE,METHOD) rotates image A, using the interpolation
+            %   method specified by METHOD. METHOD is a string that can have one of the
+            %   following values. The default value is enclosed in braces ({}).
+            %
+            %        {'nearest'}  Nearest neighbor interpolation
+            %
+            %        'bilinear'   Bilinear interpolation
+            %
+            %        'bicubic'    Bicubic interpolation. Note: This interpolation
+            %                     method can produce pixel values outside the original
+            %                     range.
+            %
+            %   B = IMROTATE_OLD(A,ANGLE,METHOD,BBOX) rotates image A, where BBOX specifies
+            %   the size of the output image B. BBOX is a text string that can have
+            %   either of the following values. The default value is enclosed in braces
+            %   ({}).
+            %
+            %        {'loose'}    Make output image B large enough to contain the
+            %                     entire rotated image. B is generally larger than A.
+            %
+            %        'crop'       Make output image B the same size as the input image
+            %                     A, cropping the rotated image to fit.
+            %
+            %   Class Support
+            %   -------------
+            %   The input image can be numeric or logical.  The output image is of the
+            %   same class as the input image.
+            %
+            %   Performance Note
+            %   ----------------
+            %   This function may take advantage of hardware optimization for datatypes
+            %   uint8, uint16, single, and double to run faster.
+            %
+            %   Example
+            %   -------
+            %        % This example brings image I into horizontal alignment by
+            %        % rotating the image by -1 degree.
+            %
+            %        I = fitsread('solarspectra.fts');
+            %        I = rescale(I);
+            %        J = imrotate_old(I,-1,'bilinear','crop');
+            %        figure, imshow(I), figure, imshow(J)
+            %
+            %   See also IMROTATE, IMCROP, IMRESIZE, IMTRANSFORM, TFORMARRAY.
+            
+            %   Copyright 1992-2017 The MathWorks, Inc.
+            
+            % Grandfathered:
+            %   Without output arguments, IMROTATE_OLD(...) displays the rotated
+            %   image in the current axis.
+            
+            [A,ang,method,bbox] = SubFcn.parse_inputs(varargin{:});
+            
+            if (isempty(A))
+                
+                B = A; % No rotation needed
+                
+            else
+                so = size(A);
+                twod_size = so(1:2);
+                
+                if rem(ang,90) == 0
+                    % Catch and speed up 90 degree rotations
+                    
+                    % determine if angle is +- 90 degrees or 0,180 degrees.
+                    multiple_of_ninety = mod(floor(ang/90), 4);
+                    
+                    % initialize array of subscripts
+                    v = repmat({':'},[1 ndims(A)]);
+                    
+                    switch multiple_of_ninety
+                        
+                        case 0
+                            % 0 rotation;
+                            B = A;
+                            
+                        case {1,3}
+                            % +- 90 deg rotation
+                            
+                            thirdD = prod(so(3:end));
+                            A = reshape(A,[twod_size thirdD]);
+                            
+                            not_square = twod_size(1) ~= twod_size(2);
+                            if strcmpi(bbox, 'crop') && not_square
+                                % center rotated image and preserve size
+                                
+                                imbegin = (max(twod_size) == so)*abs(diff(floor(twod_size/2)));
+                                vec = 1:min(twod_size);
+                                v(1) = {imbegin(1)+vec};
+                                v(2) = {imbegin(2)+vec};
+                                
+                                new_size = [twod_size thirdD];
+                                
+                            else
+                                % don't preserve original size
+                                new_size = [fliplr(twod_size) thirdD];
+                            end
+                            
+                            % pre-allocate array
+                            if islogical(A)
+                                B = false(new_size);
+                            else
+                                B = ones(new_size, 'like', A)*255;
+                            end
+                            
+                            B(v{1},v{2},:) = rot90(A(v{1},v{2},:), multiple_of_ninety);
+                            
+                            B = reshape(B,[new_size(1) new_size(2) so(3:end)]);
+                            
+                        case 2
+                            % 180 rotation
+                            
+                            v(1) = {twod_size(1):-1:1};
+                            v(2) = {twod_size(2):-1:1};
+                            B = A(v{:});
+                    end
+                    
+                else % Perform general rotation
+                    
+                    phi = ang*pi/180; % Convert to radians
+                    
+                    rotate = maketform('affine',[ cos(phi)  sin(phi)  0; ...
+                        -sin(phi)  cos(phi)  0; ...
+                        0       0       1 ]);
+                    
+                    [loA,hiA,loB,hiB,outputSize] = SubFcn.getOutputBound(rotate,twod_size,bbox);
+                    
+                    % Rotate using tformarray
+                    boxA = maketform('box',twod_size,loA,hiA);
+                    boxB = maketform('box',outputSize,loB,hiB);
+                    T = maketform('composite',[fliptform(boxB),rotate,boxA]);
+                    
+                    if strcmp(method,'bicubic')
+                        R = makeresampler('cubic','fill');
+                    elseif strcmp(method,'bilinear')
+                        R = makeresampler('linear','fill');
+                    else
+                        R = makeresampler('nearest','fill');
+                    end
+                    
+                    B = tformarray(A, T, R, [1 2], [1 2], outputSize, [], 255);
+                    
+                end
+                
+            end
+            
+            
+            % Output
+            switch nargout,
+                case 0,
+                    % Need to set varargout{1} so ans gets populated even if user doesn't ask for output
+                    varargout{1} = B;
+                case 1,
+                    varargout{1} = B;
+                case 3,
+                    error(message('images:removed:syntax','[R,G,B] = IMROTATE_OLD(RGB)','RGB2 = IMROTATE_OLD(RGB1)'))
+                otherwise,
+                    error(message('images:imrotate:tooManyOutputs'))
+            end
+        end
+        
+        function [loA,hiA,loB,hiB,outputSize] = getOutputBound(rotate,twod_size,bbox)
+            
+            % Coordinates from center of A
+            hiA = (twod_size-1)/2;
+            loA = -hiA;
+            if strcmpi(bbox, 'loose')  % Determine limits for rotated image
+                hiB = ceil(max(abs(tformfwd([loA(1) hiA(2); hiA(1) hiA(2)],rotate)))/2)*2;
+                loB = -hiB;
+                outputSize = hiB - loB + 1;
+            else % Cropped image
+                hiB = hiA;
+                loB = loA;
+                outputSize = twod_size;
+            end
+        end
+        
+        function [A,ang,method,bbox] = parse_inputs(varargin)
+            
+            narginchk(2,4);
+            
+            % validate image
+            A = varargin{1};
+            validateattributes(A,{'numeric','logical'},{},mfilename,'input image',1);
+            
+            % validate angle
+            ang = double(varargin{2});
+            validateattributes(ang,{'numeric'},{'real','scalar'},mfilename,'ANGLE',2);
+            
+            method = 'nearest';
+            bbox   = 'loose';
+            strings  = {'nearest','bilinear','bicubic','crop','loose'};
+            isBBox   = [ false   ,false     ,false    ,true  ,true   ];
+            if nargin==3
+                
+                arg = varargin{3};
+                if ~ischar(arg)
+                    error(message('images:imrotate:expectedString'));
+                end
+                idx = SubFcn.stringmatch(lower(arg),strings);
+                SubFcn.checkStringValidity(idx,arg);
+                arg = strings{idx};
+                
+                if isBBox(idx)
+                    bbox = arg;
+                else
+                    method = arg;
+                end
+                
+            elseif nargin==4
+                
+                arg1 = varargin{3};
+                if ~ischar(arg1)
+                    error(message('images:imrotate:expectedString'));
+                end
+                idx1 = SubFcn.stringmatch(lower(arg1),strings);
+                SubFcn.checkStringValidity(idx1,arg1);
+                arg1 = strings{idx1};
+                
+                arg2 = varargin{4};
+                if ~ischar(arg2)
+                    error(message('images:imrotate:expectedString'));
+                end
+                idx2 = SubFcn.stringmatch(lower(arg2),strings);
+                SubFcn.checkStringValidity(idx2,arg2);
+                arg2 = strings{idx2};
+                
+                if isBBox(idx1)
+                    bbox = arg1;
+                else
+                    method = arg1;
+                end
+                
+                if isBBox(idx2)
+                    bbox = arg2;
+                else
+                    method = arg2;
+                end
+            end
+        end
+        
+        function idx = stringmatch(str,cellOfStrings)
+            idx = find(strncmpi(str, cellOfStrings, numel(str)));
+        end
+        
+        function checkStringValidity(idx,arg)
+            if isempty(idx)
+                error(message('images:imrotate:unrecognizedInputString', arg));
+            elseif numel(idx)>1
+                error(message('images:imrotate:ambiguousInputString', arg));
+            end
+        end
+        
+        function [p, s, TestStatDistribution, c] = BootstrapHypothesisTesting(xSample, z, y, N_Boot, seed, userTestStat)
+            % [p, s, TestStatDistribution, c] = BootstrapHypothesisTesting(xSample, z, y, N_Boot, seed, userTestStat)
+            % Bootstrap-based randomization test for statistical inference on either
+            % one-sample or two-sample data.
+            %
+            % 'one-sample'
+            % -------------------------------------------------------------------------
+            % A one-sample test can be used to determine whether the mean a given
+            % sample differs from a pre-determined value (e.g. 0.5).
+            % The default test statistic is |avg-PredetVal| / (std/N);
+            % Inputs:
+            %   xSample = 'one-sample'
+            %   z ................ original sample
+            %   y ................ pre-determined value. Default is 0
+            %   N_Boot ........... number of resampling. Default is 2 to the power of
+            %                      the sample size with a minimum of 5000;
+            %   seed ............. seed for reproducibility. Default is 1234
+            %   userTestStat ..... custom test statistic with three inputs: (i) sample,
+            %                      (ii) sample size, and (iii) pre-determined value
+            %
+            % 'two-sample'
+            % -------------------------------------------------------------------------
+            % A two-sample test can be used to determine whether the means of two given
+            % differ from each other
+            % The default test statistic is |avg1-avg2| / sqrt(std1/N1 + std2/N2);
+            % Inputs:
+            %   xSample = 'two-sample'
+            %   z ................ first original sample
+            %   y ................ second original sample
+            %   N_Boot ........... number of resampling. Default is 2 to the power of
+            %                      the avg sample size with a minimum of 5000;
+            %   seed ............. seed for reproducibility. Default is 1234
+            %   userTestStat ..... custom test statistic with four inputs: (i) sample1,
+            %                      (ii) sample2, (iii) sample size 1, and (iv) sample
+            %                      size 2
+            %
+            % 'ranked-consistency'
+            % -------------------------------------------------------------------------
+            % This can be used to detect differences in treatments across multiple test
+            % attempts. The procedure involves ranking each row together, then
+            % considering the values of ranks by columns.
+            % The default test statistic is 12n/k(k+1) * sum[j=1,k]( (r-(k+1)/2)^2 )
+            % Inputs:
+            %   xSample = 'ranked-consistency'
+            %   z ................ original sample (n*k matrix)
+            %   y ................ number of repetitions. Default is 1.
+            %   N_Boot ........... number of resampling. Default is 2 to the power of
+            %                      n*k with a minimum of 5000;
+            %   seed ............. seed for reproducibility. Default is 1234
+            %   userTestStat ..... custom test statistic with three inputs: (i) n,
+            %                      (ii) k, (iii) rank table
+            %
+            % Version: 21-Sep-2021, Matlab R2021a, Yannick
+            
+            
+            % Check number of inputs
+            if nargin == 6
+                % --- custom test statistic
+                TestStat = userTestStat;
+            end
+            if nargin < 6
+                % --- default test statistic
+                switch xSample
+                    case 'one-sample'
+                        TestStat = @(x1, L_x1, PredetVal) abs(mean(x1) - PredetVal) ./ (std(x1) / L_x1);
+                    case 'two-sample'
+                        TestStat = @(x1, x2, L_x1, L_x2) abs(mean(x1) - mean(x2)) ./ sqrt(   std(x1)/L_x1 + std(x2)/L_x2   );
+                    case 'ranked-consistency'
+                        TestStat = @(n,k,r) ((12*n)/(k*(k+1))) * sum( (r-((k+1)/2)).^2 );
+                end%switch
+            end
+            if nargin < 5
+                % --- seed
+                seed = 1234;
+            end
+            if nargin < 4
+                % --- number of boot sample
+                N_Boot = 2^numel(z);
+                % Check whether too small
+                if N_Boot<5000
+                    N_Boot = 5000;
+                end%if
+            end
+            if nargin < 3
+                % --- default comparison
+                switch xSample
+                    case 'one-sample'
+                        y = 0;
+                    case 'two-sample'
+                        y = randn(size(z,1), size(z,2));
+                    case 'ranked-consistency'
+                        y = 1;
+                end%switch
+            end
+            if nargin < 2
+                error('Error: Missing input.')
+            end
+            
+            
+            
+            % Switch whether to perform a one-sample or two-sample bootstrap-based
+            %  randomization test
+            switch xSample
+                case 'one-sample'
+                    % Reshape input sample
+                    z = z(:);
+                    % Get TestStatDistribution to draw from
+                    z_tilde = z - mean(z) + y;
+                    % Sample from the joined TestStatDistribution
+                    rng(seed)
+                    z_boot = reshape(z_tilde(randsample(1:length(z), length(z)*N_Boot, 'true')), [length(z), N_Boot]);
+                    % Apply test statistic
+                    TestStatDistribution.sample = TestStat(z, length(z), y);
+                    TestStatDistribution.boot = TestStat(z_boot, length(z), y);
+                    % Cohen's d stays empty
+                    c = [];
+                case 'two-sample'
+                    % Reshape input samples
+                    z = z(:);
+                    y = y(:);
+                    % Get joined TestStatDistributions to sample from
+                    x = [z;y];
+                    % Draw bootstrap samples with replacement
+                    rng(seed)
+                    x_boot = reshape(randsample(x, length(x)*N_Boot, 'true'), [length(x),N_Boot]);
+                    % Split resamples according to length of input samples
+                    z_boot = x_boot(1:length(z),:);
+                    y_boot = x_boot(length(z)+1:end,:);
+                    % Evaluate the test statistics on the original and on the
+                    % bootstrap samples
+                    TestStatDistribution.sample = TestStat(z,      y,      length(z), length(y));
+                    TestStatDistribution.boot =   TestStat(z_boot, y_boot, length(z), length(y));
+                    % Get Cohen's d (effect size)
+                    c = abs(mean(z)-mean(y)) / std(x);
+                case 'ranked-consistency'
+                    % Get info on sample
+                    [sample_r, sample_c] = size(z);
+                    % Check correct input
+                    if (y>1)
+                        sample_r = sample_r/y;
+                        if (floor(sample_r) ~= sample_r)
+                            error('Error: The number of rows must be a multiple of y');
+                        end
+                    end
+                    % Get a matrix of ranks m.  For the unusual case of replicated
+                    % measurements, rank together all replicates in the same row.  This
+                    % is the advice given by Zar (1996), "Biostatistical Analysis."
+                    m = z;
+                    for j=1:sample_r
+                        jrows = y * (j-1) + (1:y);
+                        v = z(jrows,:);
+                        a = tiedrank(v(:));
+                        m(jrows,:) = reshape(a, y, sample_c);
+                        clear a v jrows
+                    end
+                    % Get the average rank
+                    avgRank = mean(m);
+                    % Evaluate the test statistics on the original
+                    TestStatDistribution.sample = TestStat(size(z,1), size(z,2), avgRank);
+                    % Evaluate the test statistics on permutated data
+                    % --- Preallocation
+                    TestStatDistribution.boot = nan(N_Boot,1);
+                    % Repeat N_Boot times
+                    for iBoot = 1:N_Boot
+                        z_boot = reshape(randsample(z(:), numel(z), 'true'), [size(z,1), size(z,2)]);
+                        % Get a matrix of ranks m.  For the unusual case of replicated
+                        % measurements, rank together all replicates in the same row.  This
+                        % is the advice given by Zar (1996), "Biostatistical Analysis."
+                        m = z_boot;
+                        for j=1:sample_r
+                            jrows = y * (j-1) + (1:y);
+                            v = z_boot(jrows,:);
+                            a = tiedrank(v(:));
+                            m(jrows,:) = reshape(a, y, sample_c);
+                            clear a v jrows
+                        end
+                        % Get the average rank
+                        avgRank = mean(m);
+                        TestStatDistribution.boot(iBoot) = TestStat(size(z,1), size(z,2), avgRank);
+                    end%iBoot
+                    % Cohen's d stays empty
+                    c = [];
+                otherwise
+                    error('Error: Unknown test (xSample)')
+            end%switch
+            
+            % Get p value
+            p = mean(TestStatDistribution.boot >= TestStatDistribution.sample);
+            % Check wether p value does not exeed boundaries.
+            if p == 0
+                p = 1/N_Boot;
+                warning('Test resulted in p=0. Thus it was set to 1/N_Boot.')
+            elseif p < 1/N_Boot
+                p = 1/N_Boot;
+                warning('Test resulted in p<1/N_Boot. Thus it was set to 1/N_Boot.')
+            end
+            % Get Shannon information
+            s = -log2(p);
+        end%FCN:BootstrpHypothesisTesting
+                
     end%method
 end%class
