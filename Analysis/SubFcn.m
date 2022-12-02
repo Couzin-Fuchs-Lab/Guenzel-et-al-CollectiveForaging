@@ -1,24 +1,24 @@
 %% Information integration for nutritional decision-making in desert locusts
-% Swarms of the migratory desert locust can extend over several hundred 
-% square kilometres, and starvation compels this ancient pest to devour 
-% everything in its path. Theory suggests that gregarious behaviour 
-% benefits foraging efficiency over a wide range of spatial food 
-% distributions. However, despite the importance of identifying the 
-% processes by which swarms locate and select feeding sites to predict 
-% their progression, the role of social cohesion during foraging remains 
-% elusive. We investigated the evidence accumulation and information 
-% integration processes that underlie locusts' nutritional decision-making 
-% by employing a Bayesian formalism on high-resolution tracking data from 
-% foraging locusts. We tested individual gregarious animals and groups of 
-% different sizes in a 2-choice behavioural assay in which food patch 
-% qualities were either different or similar. We then predicted the 
-% decisions of individual locusts based on personally acquired and socially 
-% derived evidence by disentangling the relative contributions of each 
-% information class. Our study suggests that locusts balance incongruent 
-% evidence but reinforce congruent ones, resulting in more confident 
-% assessments when evidence aligns. We provide new insights into the 
-% interplay between personal experience and social context in locust 
-% foraging decisions which constitute a powerful empirical system to study 
+% Swarms of the migratory desert locust can extend over several hundred
+% square kilometres, and starvation compels this ancient pest to devour
+% everything in its path. Theory suggests that gregarious behaviour
+% benefits foraging efficiency over a wide range of spatial food
+% distributions. However, despite the importance of identifying the
+% processes by which swarms locate and select feeding sites to predict
+% their progression, the role of social cohesion during foraging remains
+% elusive. We investigated the evidence accumulation and information
+% integration processes that underlie locusts' nutritional decision-making
+% by employing a Bayesian formalism on high-resolution tracking data from
+% foraging locusts. We tested individual gregarious animals and groups of
+% different sizes in a 2-choice behavioural assay in which food patch
+% qualities were either different or similar. We then predicted the
+% decisions of individual locusts based on personally acquired and socially
+% derived evidence by disentangling the relative contributions of each
+% information class. Our study suggests that locusts balance incongruent
+% evidence but reinforce congruent ones, resulting in more confident
+% assessments when evidence aligns. We provide new insights into the
+% interplay between personal experience and social context in locust
+% foraging decisions which constitute a powerful empirical system to study
 % local individual decisions and their consequent collective dynamics.
 %
 % This is file contains all helper functions for the main analysis.
@@ -30,12 +30,12 @@ classdef SubFcn
     % Detailed explanation goes here ...
     % Version:
     % 17-Feb-2021 (R2020a) Yannick G??nzel
-    
+
     properties
     end
-    
+
     methods(Static)
-        
+
         function cm_data = ColMapPlasma(m)
             cm = [[  5.03832136e-02,   2.98028976e-02,   5.27974883e-01],
                 [  6.35363639e-02,   2.84259729e-02,   5.33123681e-01],
@@ -303,7 +303,7 @@ classdef SubFcn
                 cm_data=hsv2rgb(cm_data);
             end
         end%FCN:ColMapPlasma
-        
+
         function cm_data = ColMapInferno(m)
             cm = [[  1.46159096e-03,   4.66127766e-04,   1.38655200e-02],
                 [  2.26726368e-03,   1.26992553e-03,   1.85703520e-02],
@@ -571,7 +571,7 @@ classdef SubFcn
                 cm_data=hsv2rgb(cm_data);
             end
         end%FCN:ColMapInferno
-        
+
         function cm_data = ColMapViridis(m)
             cm = [[ 0.26700401,  0.00487433,  0.32941519],
                 [ 0.26851048,  0.00960483,  0.33542652],
@@ -835,10 +835,10 @@ classdef SubFcn
                 hsv=rgb2hsv(cm);
                 cm_data=interp1(linspace(0,1,size(cm,1)),hsv,linspace(0,1,m));
                 cm_data=hsv2rgb(cm_data);
-                
+
             end
         end%FCN:ColMapViridis
-        
+
         function [smoothed_signal, g] = smooth(signal, hw, kernel, tau, sigma)
             % SMOOTH(signal, hw, g_filter, tau, sigma) filters a given vector 'signal'
             % by calculating the running average, if no explecit  filter function is
@@ -853,7 +853,7 @@ classdef SubFcn
             % The half width by which the input should be filtered can be set via the
             % variable 'hw'.
             % Version: 07-Feb-2021
-            
+
             % Check number of inputs. If only three inputs are given, use a simple
             % running avergae to filter the data.
             if nargin < 3
@@ -933,7 +933,7 @@ classdef SubFcn
             % Cut signal
             smoothed_signal=smoothed_signal(hw+1:end-(hw));
         end%FCN:smooth
-        
+
         function out = CorrectVisits(data, SET)
             % Prepare output
             out = data;
@@ -971,7 +971,7 @@ classdef SubFcn
                 end%if
             end%iGap
         end%FCN:CorrectVisits
-        
+
         function out = VisitHistory(TC_A, TC_B)
             % Get joining events
             A_diff = diff(TC_A);
@@ -1021,9 +1021,9 @@ classdef SubFcn
                 end%iEvent
                 out = fillmissing(fillmissing(out,'next'), 'previous');
             end
-            
+
         end%FCN:VisitHistory
-        
+
         function InstaFreq = GetInstaFreq(Events, Dur, SamplingRate)
             % --- Input
             % Events:        Indices in 1D vector vector
@@ -1031,7 +1031,7 @@ classdef SubFcn
             % SamplingRate:  fps of the original signal
             % --- Output
             % InstaFreq:     1xDur vector
-            
+
             % Preallocation
             InstaFreq = zeros(1, Dur);
             % Iterate over events
@@ -1040,7 +1040,7 @@ classdef SubFcn
                     1/(((Events(iEvent)-1) - (Events(iEvent-1)))/SamplingRate);
             end%iEvent
         end%FCN:GetInstaFreq
-        
+
         function Switching_t1 = GetSwitching_t1(TC_A, TC_B)
             % Preallocation
             Switching_t1 = zeros(2,2); % (++, +-; -+, --)
@@ -1080,7 +1080,7 @@ classdef SubFcn
                 end%iEvent
             end%if
         end%FCN:GetSwitching_t1
-        
+
         function Switching_t2 = GetSwitching_t2(TC_A, TC_B)
             % Preallocation
             Switching_t2 = zeros(4,2); % (+++, ++-; +-+, +--; -++, -+-; --+, ---)
@@ -1124,14 +1124,14 @@ classdef SubFcn
                 end%iEvent
             end%if
         end%FCN:GetSwitching_t2
-        
+
         function DrawCircle(x,y,r, col)
             th = 0:pi/50:2*pi;
             xunit = r * cos(th) + x;
             yunit = r * sin(th) + y;
             plot(xunit, yunit, 'Color', col, 'Linewidth', 1.5);
         end%FCN:DrawCircle
-        
+
         function violinplot_advanced(ViolinData, pos, width, properties)
             % VIOLINPLOT_ADVANCED(data,pos,width,properties) gives the user more
             % possibilities to depict data as a violinplot. The underlying function is
@@ -1172,7 +1172,7 @@ classdef SubFcn
             %       properties.OutlierSize =        5;                  %(Set size of outlier symbols)
             %
             % Version: 09-May-2020; Yannick (MATLAB 2020a)
-            
+
             % Replace not given property values by defaults
             if nargin < 4
                 properties = 'default';
@@ -1185,12 +1185,12 @@ classdef SubFcn
             data.mean = mean(data.all );
             % Get the probability density estimate based on a normal kernel
             % function withequally-spaced points
-            [density, value] = ksdensity(data.all, 'NumPoints', properties.NumPoints);
+            [density, value] = ksdensity(data.all, 'NumPoints', properties.NumPoints, 'BoundaryCorrection','reflection');
             density = density/max(density)/2*width;
             % Truncate to be between min and max
             density = interp1(value, density, linspace(min(data.all), max(data.all), properties.NumPoints));
             value = linspace(min(data.all), max(data.all), properties.NumPoints);
-            
+
             % Separate outliers from data
             if properties.SeparateOutliers
                 % Define min. and max. value for data points to not be an outlier
@@ -1312,7 +1312,7 @@ classdef SubFcn
                     plot(data.outlier, ones(1,length(data.outlier))*pos, properties.OutlierSymbol, 'MarkerFaceColor', properties.OutlierCol, 'MarkerEdgeColor', 'none', 'MarkerSize', properties.OutlierSize)
             end%orientation
         end%FCN:violinplot_advanced
-        
+
         function out = FillEmptyPropertyValues_violin(properties)
             % FillEmptyPropertyValues(properties) checks whether a property has been
             % set by the user. If not, replace it by its default value. If no property
@@ -1356,7 +1356,7 @@ classdef SubFcn
                 end%iProp
             end%if completely use default values
         end%FCN:FillEmptyPropertyValues
-        
+
         function beeswarmplot_advanced(BeeData, pos, width, properties)
             % BEESWARMPLOT_ADVANCED(BeeData, pos, width, properties)  creates a
             % beeswarm plot , i.e. point distributions where jitter has been added to
@@ -1377,13 +1377,13 @@ classdef SubFcn
             %       properties.MarkerEdgeColor =    'none'              %(Marker edge color)
             %       properties.MarkerSize =         1                   %(Marker size)
             % Version: 12-May-2020; Yannick (MATLAB 2020a)
-            
+
             % ----- Prepare data -----
             % Replace not given property values by defaults
             if nargin < 4
                 properties = 'default';
             end
-            properties = SubFcn_Behaviour.FillEmptySwarmPropertyValues(properties);
+            properties = SubFcn.FillEmptySwarmPropertyValues(properties);
             % Exclude NaNs
             data.all = BeeData(~isnan(BeeData));
             % reshape
@@ -1396,7 +1396,7 @@ classdef SubFcn
             data.all = sort(data.all);
             % ----- Use the data's density to spread it -----
             % Get the probability density estimate for the sample data
-            [density, value] = ksdensity(data.all, 'NumPoints', data.N_Bees*2);
+            [density, value] = ksdensity(data.all, 'NumPoints', data.N_Bees*2, 'BoundaryCorrection', 'reflection');
             % Scale data
             density = density/max(density);
             % Cut density to be the min and max of the original data
@@ -1419,7 +1419,7 @@ classdef SubFcn
                         'MarkerSize', properties.MarkerSize)
             end%switch orientation
         end%FCN:beeswarmplot_advanced
-        
+
         function out = FillEmptySwarmPropertyValues(properties)
             % FillEmptyPropertyValues(properties) checks whether a property has been
             % set by the user. If not, replace it by its default value. If no property
@@ -1448,12 +1448,12 @@ classdef SubFcn
                         out.(FieldNames{iProp}) = properties.(FieldNames{iProp});
                     end%if prperty has not been set
                 end%iProp
-                
+
             end%if completely use default values
         end%FCN:FillEmptySwarmPropertyValues
-        
+
         function ModelOutput = InfoIntegrationModel(DATA, tau, IndScale)
-            
+
             %--------------------------------------------------------------
             % Setting
             %--------------------------------------------------------------
@@ -1474,10 +1474,10 @@ classdef SubFcn
             SET.N_bin = 7;
             SET.BFnames = {'ind_num_visit'; 'ind_experience_cumul'; 'soc_density_cumul'; 'ind_experience_leaky'; 'soc_density_leaky'};
             SET.ProbNames = [SET.BFnames; 'integration_cumul'; 'integration_leaky'];
-            
-%             BetaDist = @(a,b) (a-1)./(a+b-2);
+
+            %             BetaDist = @(a,b) (a-1)./(a+b-2);
             BetaDist = @(a,b) (a)./(a+b);
-            
+
             %--------------------------------------------------------------
             % Extract data
             %--------------------------------------------------------------
@@ -1548,7 +1548,7 @@ classdef SubFcn
                     dens_B_cumul = cumsum(dens_B(:).*StopBout(:))+1+1e-10;
                     dens_A_leaky = SubFcn.leakyIntegrator(dens_A(:).*StopBout(:), SET.TauSoc, timeVec, dt)+1+1e-10;
                     dens_B_leaky = SubFcn.leakyIntegrator(dens_B(:).*StopBout(:), SET.TauSoc, timeVec, dt)+1+1e-10;
-                    
+
 
                     % Iterate over consecutive joinings and combine
                     % everything
@@ -1567,7 +1567,7 @@ classdef SubFcn
                                     oddTbl.ind_num_visit(:,cnt) = oddTbl.ind_num_visit(:,cnt-1) + [0;1];
                                 end%if
                             end%if
-                            
+
                             % -----
                             % Get the cumulative time an animal has spent
                             oddTbl.ind_experience_cumul(:,cnt) = [hist_A_cumul(JoinEvents(iEvent,1)); hist_B_cumul(JoinEvents(iEvent,1))];
@@ -1588,7 +1588,7 @@ classdef SubFcn
                             Tbl(2,cnt) = cnt_ani;
                             Tbl(3,cnt) = cnt_trial;
                             % -----
-                            
+
                             % Update counter
                             cnt = cnt+1;
                         end
@@ -1602,8 +1602,8 @@ classdef SubFcn
             oddTbl.soc_density_cumul = oddTbl.soc_density_cumul(:,1:cnt-1);
             oddTbl.ind_experience_leaky = oddTbl.ind_experience_leaky(:,1:cnt-1);
             oddTbl.soc_density_leaky = oddTbl.soc_density_leaky(:,1:cnt-1);
-                        
-            
+
+
             % Get likelihood ratio and resulting log(Bayes factor) of
             % different channels
             % -------------------------------------------------------------
@@ -1612,23 +1612,23 @@ classdef SubFcn
                 idx = find(Tbl(1,:)==0);
                 LR.(SET.ProbNames{iProb})(:,idx) = [LR.(SET.ProbNames{iProb})(2,idx); LR.(SET.ProbNames{iProb})(1,idx)];
                 BF.(SET.ProbNames{iProb}) = log(LR.(SET.ProbNames{iProb})(1,:) ./ LR.(SET.ProbNames{iProb})(2,:));
-            end%iProb    
-            
+            end%iProb
+
             LR.integration_cumul = LR.ind_experience_cumul .* LR.soc_density_cumul;% .* LR.ind_num_visit;
             LR.integration_leaky = LR.ind_experience_leaky .* LR.soc_density_leaky;% .* LR.ind_num_visit;
-            
+
             BF.integration_cumul = log(LR.integration_cumul(1,:)./LR.integration_cumul(2,:));
             BF.integration_leaky = log(LR.integration_leaky(1,:)./LR.integration_leaky(2,:));
-            
-            
-            
+
+
+
             % Keep things together for output
             % -------------------------------------------------------------
             ModelData.oddTbl = oddTbl;
             ModelData.LR = LR;
             ModelData.BF = BF;
-            
-            
+
+
             % Get average performance per animal
             % -------------------------------------------------------------
             SET.unique_ani = sort(unique(Tbl(2,:)));
@@ -1652,19 +1652,19 @@ classdef SubFcn
                     end%if empty bin
                 end%iProb
             end%iAni
-            
+
             % Compile output
             % -------------------------------------------------------------
             ModelOutput.Tbl = Tbl;
             ModelOutput.ModelData = ModelData;
             ModelOutput.AvgPerformance = AvgPerformance;
-            
+
         end%FCN:OptEvidenceModel
-        
+
         function merge = MergeStructs(x,y)
             merge = cell2struct([struct2cell(x);struct2cell(y)],[fieldnames(x);fieldnames(y)]);
         end%FCN:MergeStructs
-        
+
         function lpf = tc_lowpass(x, tau)
             % TC_LOWPASS returns the low-pass filtered input signals x, i.e.
             % the column vectors of x are treated as independent signals.
@@ -1690,11 +1690,11 @@ classdef SubFcn
                 lpf(t) = lpf(t-1)+delta;
             end%t
         end%FCN:tc_lowpass
-        
+
         function PI = PreferenceIndex(A, B)
             PI = (A(:)-B(:))./(A(:)+B(:));
         end%FCN:PreferenceIndex
-        
+
         function y = leakyIntegrator(x,tau,t,dt)
             y =zeros(size(t));
             nt = length(t);
@@ -1702,16 +1702,16 @@ classdef SubFcn
                 dy = x(iT)-y(iT)/tau;
                 y(iT+1)=y(iT)+dy*dt;
             end
-            
+
         end%FCN
-        
+
         function ConfMat = GetConfMat(Observed, Predicted)
             % Layout of the resulting ConfMat will be:
             %
             %     TP | FP
             %     ---|---
             %     FN | TN
-            
+
             % Preallocation
             ConfMat = zeros(2,2);
             % Determine confusion
@@ -1726,7 +1726,7 @@ classdef SubFcn
             % Normalize
             ConfMat = ConfMat./[sum(ConfMat(:,1)), sum(ConfMat(:,2)); sum(ConfMat(:,1)), sum(ConfMat(:,2))];
         end%FCN:ConfMat
-        
+
         function varargout = imrotate_old255(varargin)
             %IMROTATE_OLD Rotate image (old version).
             %   This function provides the IMROTATE function as computed by versions
@@ -1783,94 +1783,94 @@ classdef SubFcn
             %        figure, imshow(I), figure, imshow(J)
             %
             %   See also IMROTATE, IMCROP, IMRESIZE, IMTRANSFORM, TFORMARRAY.
-            
+
             %   Copyright 1992-2017 The MathWorks, Inc.
-            
+
             % Grandfathered:
             %   Without output arguments, IMROTATE_OLD(...) displays the rotated
             %   image in the current axis.
-            
+
             [A,ang,method,bbox] = SubFcn.parse_inputs(varargin{:});
-            
+
             if (isempty(A))
-                
+
                 B = A; % No rotation needed
-                
+
             else
                 so = size(A);
                 twod_size = so(1:2);
-                
+
                 if rem(ang,90) == 0
                     % Catch and speed up 90 degree rotations
-                    
+
                     % determine if angle is +- 90 degrees or 0,180 degrees.
                     multiple_of_ninety = mod(floor(ang/90), 4);
-                    
+
                     % initialize array of subscripts
                     v = repmat({':'},[1 ndims(A)]);
-                    
+
                     switch multiple_of_ninety
-                        
+
                         case 0
                             % 0 rotation;
                             B = A;
-                            
+
                         case {1,3}
                             % +- 90 deg rotation
-                            
+
                             thirdD = prod(so(3:end));
                             A = reshape(A,[twod_size thirdD]);
-                            
+
                             not_square = twod_size(1) ~= twod_size(2);
                             if strcmpi(bbox, 'crop') && not_square
                                 % center rotated image and preserve size
-                                
+
                                 imbegin = (max(twod_size) == so)*abs(diff(floor(twod_size/2)));
                                 vec = 1:min(twod_size);
                                 v(1) = {imbegin(1)+vec};
                                 v(2) = {imbegin(2)+vec};
-                                
+
                                 new_size = [twod_size thirdD];
-                                
+
                             else
                                 % don't preserve original size
                                 new_size = [fliplr(twod_size) thirdD];
                             end
-                            
+
                             % pre-allocate array
                             if islogical(A)
                                 B = false(new_size);
                             else
                                 B = ones(new_size, 'like', A)*255;
                             end
-                            
+
                             B(v{1},v{2},:) = rot90(A(v{1},v{2},:), multiple_of_ninety);
-                            
+
                             B = reshape(B,[new_size(1) new_size(2) so(3:end)]);
-                            
+
                         case 2
                             % 180 rotation
-                            
+
                             v(1) = {twod_size(1):-1:1};
                             v(2) = {twod_size(2):-1:1};
                             B = A(v{:});
                     end
-                    
+
                 else % Perform general rotation
-                    
+
                     phi = ang*pi/180; % Convert to radians
-                    
+
                     rotate = maketform('affine',[ cos(phi)  sin(phi)  0; ...
                         -sin(phi)  cos(phi)  0; ...
                         0       0       1 ]);
-                    
+
                     [loA,hiA,loB,hiB,outputSize] = SubFcn.getOutputBound(rotate,twod_size,bbox);
-                    
+
                     % Rotate using tformarray
                     boxA = maketform('box',twod_size,loA,hiA);
                     boxB = maketform('box',outputSize,loB,hiB);
                     T = maketform('composite',[fliptform(boxB),rotate,boxA]);
-                    
+
                     if strcmp(method,'bicubic')
                         R = makeresampler('cubic','fill');
                     elseif strcmp(method,'bilinear')
@@ -1878,14 +1878,14 @@ classdef SubFcn
                     else
                         R = makeresampler('nearest','fill');
                     end
-                    
+
                     B = tformarray(A, T, R, [1 2], [1 2], outputSize, [], 255);
-                    
+
                 end
-                
+
             end
-            
-            
+
+
             % Output
             switch nargout,
                 case 0,
@@ -1899,9 +1899,9 @@ classdef SubFcn
                     error(message('images:imrotate:tooManyOutputs'))
             end
         end
-        
+
         function [loA,hiA,loB,hiB,outputSize] = getOutputBound(rotate,twod_size,bbox)
-            
+
             % Coordinates from center of A
             hiA = (twod_size-1)/2;
             loA = -hiA;
@@ -1915,25 +1915,25 @@ classdef SubFcn
                 outputSize = twod_size;
             end
         end
-        
+
         function [A,ang,method,bbox] = parse_inputs(varargin)
-            
+
             narginchk(2,4);
-            
+
             % validate image
             A = varargin{1};
             validateattributes(A,{'numeric','logical'},{},mfilename,'input image',1);
-            
+
             % validate angle
             ang = double(varargin{2});
             validateattributes(ang,{'numeric'},{'real','scalar'},mfilename,'ANGLE',2);
-            
+
             method = 'nearest';
             bbox   = 'loose';
             strings  = {'nearest','bilinear','bicubic','crop','loose'};
             isBBox   = [ false   ,false     ,false    ,true  ,true   ];
             if nargin==3
-                
+
                 arg = varargin{3};
                 if ~ischar(arg)
                     error(message('images:imrotate:expectedString'));
@@ -1941,15 +1941,15 @@ classdef SubFcn
                 idx = SubFcn.stringmatch(lower(arg),strings);
                 SubFcn.checkStringValidity(idx,arg);
                 arg = strings{idx};
-                
+
                 if isBBox(idx)
                     bbox = arg;
                 else
                     method = arg;
                 end
-                
+
             elseif nargin==4
-                
+
                 arg1 = varargin{3};
                 if ~ischar(arg1)
                     error(message('images:imrotate:expectedString'));
@@ -1957,7 +1957,7 @@ classdef SubFcn
                 idx1 = SubFcn.stringmatch(lower(arg1),strings);
                 SubFcn.checkStringValidity(idx1,arg1);
                 arg1 = strings{idx1};
-                
+
                 arg2 = varargin{4};
                 if ~ischar(arg2)
                     error(message('images:imrotate:expectedString'));
@@ -1965,13 +1965,13 @@ classdef SubFcn
                 idx2 = SubFcn.stringmatch(lower(arg2),strings);
                 SubFcn.checkStringValidity(idx2,arg2);
                 arg2 = strings{idx2};
-                
+
                 if isBBox(idx1)
                     bbox = arg1;
                 else
                     method = arg1;
                 end
-                
+
                 if isBBox(idx2)
                     bbox = arg2;
                 else
@@ -1979,11 +1979,11 @@ classdef SubFcn
                 end
             end
         end
-        
+
         function idx = stringmatch(str,cellOfStrings)
             idx = find(strncmpi(str, cellOfStrings, numel(str)));
         end
-        
+
         function checkStringValidity(idx,arg)
             if isempty(idx)
                 error(message('images:imrotate:unrecognizedInputString', arg));
@@ -1991,7 +1991,7 @@ classdef SubFcn
                 error(message('images:imrotate:ambiguousInputString', arg));
             end
         end
-        
+
         function [p, s, TestStatDistribution, c] = BootstrapHypothesisTesting(xSample, z, y, N_Boot, seed, userTestStat)
             % [p, s, TestStatDistribution, c] = BootstrapHypothesisTesting(xSample, z, y, N_Boot, seed, userTestStat)
             % Bootstrap-based randomization test for statistical inference on either
@@ -2006,8 +2006,7 @@ classdef SubFcn
             %   xSample = 'one-sample'
             %   z ................ original sample
             %   y ................ pre-determined value. Default is 0
-            %   N_Boot ........... number of resampling. Default is 2 to the power of
-            %                      the sample size with a minimum of 5000;
+            %   N_Boot ........... number of resampling. Default is 5000
             %   seed ............. seed for reproducibility. Default is 1234
             %   userTestStat ..... custom test statistic with three inputs: (i) sample,
             %                      (ii) sample size, and (iii) pre-determined value
@@ -2021,8 +2020,7 @@ classdef SubFcn
             %   xSample = 'two-sample'
             %   z ................ first original sample
             %   y ................ second original sample
-            %   N_Boot ........... number of resampling. Default is 2 to the power of
-            %                      the avg sample size with a minimum of 5000;
+            %   N_Boot ........... number of resampling. Default is 5000
             %   seed ............. seed for reproducibility. Default is 1234
             %   userTestStat ..... custom test statistic with four inputs: (i) sample1,
             %                      (ii) sample2, (iii) sample size 1, and (iv) sample
@@ -2038,15 +2036,29 @@ classdef SubFcn
             %   xSample = 'ranked-consistency'
             %   z ................ original sample (n*k matrix)
             %   y ................ number of repetitions. Default is 1.
-            %   N_Boot ........... number of resampling. Default is 2 to the power of
-            %                      n*k with a minimum of 5000;
+            %   N_Boot ........... number of resampling. Default is 5000
             %   seed ............. seed for reproducibility. Default is 1234
             %   userTestStat ..... custom test statistic with three inputs: (i) n,
             %                      (ii) k, (iii) rank table
             %
-            % Version: 21-Sep-2021, Matlab R2021a, Yannick
-            
-            
+            % 'ks-test'
+            % -------------------------------------------------------------------------
+            % Kolmogorov–Smirnov test comparing two different
+            % distributions. The default test statistic
+            % is max(abs((cumsum(z,1)./sum(z,1)) - (cumsum(y,1)./sum(y,1))))
+            % Inputs:
+            %   xSample = 'ks-test'
+            %   z ................ first vector
+            %   y ................ second vector Default is a shuffled
+            %                      version of the original.
+            %   N_Boot ........... number of resampling. Default is 5000
+            %   seed ............. seed for reproducibility. Default is 1234
+            %   userTestStat ..... custom test statistic with two inputs:
+            %                      two vectors with counts ber bin
+            %
+            % Version: 30-Nov-2021, Matlab R2021a, Yannick
+
+
             % Check number of inputs
             if nargin == 6
                 % --- custom test statistic
@@ -2058,9 +2070,11 @@ classdef SubFcn
                     case 'one-sample'
                         TestStat = @(x1, L_x1, PredetVal) abs(mean(x1) - PredetVal) ./ (std(x1) / L_x1);
                     case 'two-sample'
-                        TestStat = @(x1, x2, L_x1, L_x2) abs(mean(x1) - mean(x2)) ./ sqrt(   std(x1)/L_x1 + std(x2)/L_x2   );
+                        TestStat = @(x1, x2, L_x1, L_x2) abs(mean(x1) - mean(x2)) ./ sqrt(   var(x1)/L_x1 + var(x2)/L_x2   );
                     case 'ranked-consistency'
                         TestStat = @(n,k,r) ((12*n)/(k*(k+1))) * sum( (r-((k+1)/2)).^2 );
+                    case 'ks-test'
+                        TestStat = @(h1, h2) max(abs((cumsum(h1,1)./sum(h1,1)) - (cumsum(h2,1)./sum(h2,1))));
                 end%switch
             end
             if nargin < 5
@@ -2069,11 +2083,7 @@ classdef SubFcn
             end
             if nargin < 4
                 % --- number of boot sample
-                N_Boot = 2^numel(z);
-                % Check whether too small
-                if N_Boot<5000
-                    N_Boot = 5000;
-                end%if
+                N_Boot = 5000;
             end
             if nargin < 3
                 % --- default comparison
@@ -2084,14 +2094,16 @@ classdef SubFcn
                         y = randn(size(z,1), size(z,2));
                     case 'ranked-consistency'
                         y = 1;
+                    case 'ks-test'
+                        y = randsample(z,length(z));
                 end%switch
             end
             if nargin < 2
                 error('Error: Missing input.')
             end
-            
-            
-            
+
+
+
             % Switch whether to perform a one-sample or two-sample bootstrap-based
             %  randomization test
             switch xSample
@@ -2174,10 +2186,34 @@ classdef SubFcn
                     end%iBoot
                     % Cohen's d stays empty
                     c = [];
+                case 'ks-test'
+                    % Reshape input samples
+                    z = z(:);
+                    y = y(:);
+                    % Get joined count to sample from
+                    x = sum([z,y],2);
+                    % Draw bootstrap samples
+                    z_boot = zeros(length(z),N_Boot);
+                    y_boot = zeros(length(y),N_Boot);
+                    for iBin = 1:length(x)
+                        rng(seed)
+                        if x(iBin) == 0
+                            z_boot(iBin,:) = zeros(1,N_Boot);
+                        else
+                            z_boot(iBin,:) = randsample(0:x(iBin), N_Boot, true);
+                        end
+                        y_boot(iBin,:) = x(iBin)-z_boot(iBin,:);
+                    end
+                    % Evaluate the test statistics on the original and on the
+                    % bootstrap samples
+                    TestStatDistribution.sample = TestStat(z,      y);
+                    TestStatDistribution.boot =   TestStat(z_boot, y_boot);
+                    % Cohen's d stays empty
+                    c = [];
                 otherwise
                     error('Error: Unknown test (xSample)')
             end%switch
-            
+
             % Get p value
             p = mean(TestStatDistribution.boot >= TestStatDistribution.sample);
             % Check wether p value does not exeed boundaries.
@@ -2191,6 +2227,234 @@ classdef SubFcn
             % Get Shannon information
             s = -log2(p);
         end%FCN:BootstrpHypothesisTesting
-                
+
+        function pout=BinomTest(s,n,p,Sided)
+            %function pout=myBinomTest(s,n,p,Sided)
+            %
+            % Performs a binomial test of the number of successes given a total number
+            % of outcomes and a probability of success. Can be one or two-sided.
+            %
+            % Inputs:
+            %       s-      (Scalar or Array) The observed numebr of successful outcomes
+            %       n-      (Scalar or Array) The total number of outcomes (successful or not)
+            %       p-      (Scalar or Array) The proposed probability of a successful outcome
+            %       Sided-  (String) can be 'one', 'two' (the default), or 'two, equal
+            %               counts'. A value of 'one' will perform a one-sided test to
+            %               determine if the observed number of successes are either
+            %               significantly greater than or less than the expected number
+            %               of successes, depending on whether s is greater than or less
+            %               than the observed number of successes. 'Two' will use the
+            %               method of small p-values (see reference below) to perform a
+            %               two-tailed test to calculate the probability of observing
+            %               any equally unlikely or more unlikely value greater than or
+            %               less than the expected number of successes (ie with the
+            %               same cdf value of the distribution. 'Two, equal counts'
+            %               will perform a two-sided test that the that the actual
+            %               number of success is different from the expected number of
+            %               successes in any direction.
+            %
+            % Outputs:
+            %       pout-   The probability of observing the resulting value of s or
+            %               another value more extreme (the precise meaning of which
+            %               depends on the value of Sided) given n total outcomes with
+            %               a probability of success of p.
+            %
+            %       s, n and p can be scalars or arrays of the same size. The
+            %       dimensions and size of pout will match that of these inputs.
+            %
+            %   For example, the signtest is a special case of this where the value of p
+            %   is equal to 0.5 (and a 'success' is dfeined by whether or not a given
+            %   sample is of a particular sign.), but the binomial test and this code is
+            %   more general allowing the value of p to be any value between 0 and 1.
+            %
+            %   The results when Sided='two' and when Sided='two, equal counts' are
+            %   identical only when p=0.5, but are different otherwise. For more
+            %   description, see the second reference below.
+            %
+            % References:
+            %   http://en.wikipedia.org/wiki/Binomial_test
+            %   http://www.graphpad.com/guides/prism/6/statistics/index.htm?stat_binomial.htm
+            %
+            % by Matthew Nelson July 21st, 2009
+            %
+            % Last Updated by Matthew Nelson May 23, 2015
+            % matthew.nelson.neuro@gmail.com
+            if nargin<4 || isempty(Sided);    Sided='two';      end
+            if nargin<3 || isempty(p);      p=0.5;      end
+
+            s=floor(s);
+            [s,n,p]= SubFcn.EqArrayAndScalars(s,n,p);
+            E=p.*n;
+            GreaterInds=s>=E;
+            pout=zeros(size(GreaterInds));
+            Prec=1e-14;  % there are some rounding errors in matlab's binopdf, such that we need to specify a level of tolerance when using the 'two' test
+            switch lower(Sided)
+                case {'two','two, equal counts'}
+                    if all(p)==0.5 && strcmpi(Sided,'two');
+                        % to avoid the rounding problems mentioned above, use the equal counts method which is is theoretically identical in this special case and is not susceptible to this rounding error
+                        Sided='two, equal counts';
+                    end
+
+                    dE=pout;
+
+                    %note that matlab's binocdf(s,n,p) gives the prob. of getting up to AND INCLUDING s # of successes...
+                    %Calc pout for GreaterInds first
+                    if any(GreaterInds)
+                        pout(GreaterInds)=1-binocdf( s(GreaterInds)-1,n(GreaterInds),p(GreaterInds));  %start with the prob of getting >= s # of successes
+
+                        %now figure the difference from the expected value, and figure the prob of getting lower than that difference from the expected value # of successes
+                        dE(GreaterInds)=s(GreaterInds)-E(GreaterInds);
+
+                        if strcmpi(Sided,'two, equal counts')
+                            s2= floor(E(GreaterInds)-dE(GreaterInds));
+
+                            % if s2<0 we add nothing because a negative number of sucesses is impossible
+                            if s2>=0
+                                pout(GreaterInds)=pout(GreaterInds)+ binocdf(s2,n(GreaterInds),p(GreaterInds));    %the binonmial is a discrete dist. ... so it's value over non-integer args has no meaning... this flooring of E-dE actually doesn't affect the outcome (the result is the same if the floor was removed) but it's included here as a reminder of the discrete nature of the binomial
+                            end
+
+                            %If the expected value is exactly equaled, the above code would have added the probability at that discrete value twice, so we need to adjust (in this case, pout will always = 1 anyways)
+                            EqInds=dE==0;
+                            if any(EqInds)
+                                pout(EqInds)=pout(EqInds)- binopdf( E(EqInds),n(EqInds),p(EqInds) );
+                            end
+                        else
+                            Inds=find(GreaterInds);
+
+                            % find the first value on the other side of the expected value with probability less than or equal to the probability that we found...
+                            targy=binopdf(s(GreaterInds),n(GreaterInds),p(GreaterInds));
+
+                            % start by guessing a constant dE, and adjusting from there
+                            s2=max(floor(E(GreaterInds)-dE(GreaterInds)),0);      %the binonmial is a discrete dist. ... so it's value over non-integer args has no meaning... this flooring of E-dE actually doesn't affect the outcome (the result is the same if the floor was removed) but it's included here as a reminder of the discrete nature of the binomial
+
+                            y=binopdf(s2,n(GreaterInds),p(GreaterInds));
+                            for ii=1:length(Inds)
+                                SkipPAdd=false;
+                                if y(ii) <= targy(ii)
+                                    % search forward until we find the correct limit
+                                    while y(ii) <= targy(ii) && s2(ii)<E(Inds(ii))
+                                        s2(ii)=s2(ii)+1;
+                                        y(ii)=binopdf(s2(ii),n(Inds(ii)),p(Inds(ii)));
+                                    end
+                                    s2(ii)=s2(ii)-1;    % because the last iteration would have crossed the boundary, and we want the first s2 with a binopdf <= targy
+                                else
+                                    %while y(ii) > targy(ii) && s2(ii)<n(Inds(ii))  % sometimes this is susceptible to rounding errors which we want to avoid with the line below
+                                    while (y(ii) - targy(ii)) > Prec && s2(ii)<n(Inds(ii))
+                                        s2(ii)=s2(ii)-1;
+                                        y(ii)=binopdf(s2(ii),n(Inds(ii)),p(Inds(ii)));
+                                    end
+                                    % if y(ii)>targy(ii) % bc of rounding error again, avoid this line
+                                    if (y(ii) - targy(ii)) > Prec % in this case s2 is at 0, and the prob stil wasn't low enough so we need to add nothing new to pout
+                                        SkipPAdd=true;
+                                    end
+                                end
+
+                                if ~SkipPAdd
+                                    % adding the lesser-than tail here
+                                    pout(Inds(ii))=pout(Inds(ii))+ binocdf(s2(ii),n(Inds(ii)),p(Inds(ii)));
+                                end
+                            end
+                        end
+                    end
+
+                    %Calc pout for LesserInds second
+                    if any(~GreaterInds)
+                        pout(~GreaterInds)=binocdf(s(~GreaterInds),n(~GreaterInds),p(~GreaterInds));  %start with the prob of getting <= s # of successes
+
+                        %now figure the difference from the expected value, and figure the prob of getting greater than that difference from the expected value # of successes
+                        dE(~GreaterInds)=E(~GreaterInds)-s(~GreaterInds);
+
+                        if strcmpi(Sided,'two, equal counts')
+                            s2=ceil(E(~GreaterInds)+dE(~GreaterInds));
+
+                            if s2<=n(~GreaterInds)
+                                pout(~GreaterInds)=pout(~GreaterInds) + 1-binocdf(s2-1,n(~GreaterInds),p(~GreaterInds));
+                            end
+                        else
+                            Inds=find(~GreaterInds);
+
+                            % find the first value on the other side of the expected value with probability less than or equal to the probability that we found...
+                            targy=binopdf(s(~GreaterInds),n(~GreaterInds),p(~GreaterInds));
+
+                            % start by guessing a constant dE, and adjusting from there
+                            s2=min(ceil(E(~GreaterInds)+dE(~GreaterInds)),n(~GreaterInds));      %the binonmial is a discrete dist. ... so it's value over non-integer args has no meaning... this flooring of E-dE actually doesn't affect the outcome (the result is the same if the floor was removed) but it's included here as a reminder of the discrete nature of the binomial
+                            y=binopdf(s2,n(~GreaterInds),p(~GreaterInds));
+                            for ii=1:length(Inds)
+                                SkipPAdd=false;
+                                if y(ii) <= targy(ii)
+                                    % search backward until we find the correct limit
+                                    while y(ii) <= targy(ii) && s2(ii)>E(Inds(ii))
+                                        s2(ii)=s2(ii)-1;
+                                        y(ii)=binopdf(s2(ii),n(Inds(ii)),p(Inds(ii)));
+                                    end
+                                    s2(ii)=s2(ii)+1;    % because the last iteration would have crossed the boundary, and we want the first s2 with a binopdf <= targy
+                                else
+                                    %while y(ii) > targy(ii) && s2(ii)<n(Inds(ii))  % sometimes this is susceptible to rounding errors which we want to avoid with the line below
+                                    while (y(ii) - targy(ii)) > Prec && s2(ii)<n(Inds(ii))
+                                        s2(ii)=s2(ii)+1;
+                                        y(ii)=binopdf(s2(ii),n(Inds(ii)),p(Inds(ii)));
+                                    end
+                                    %if y(ii)>targy(ii) % bc of rounding error again, avoid this line
+                                    if (y(ii) - targy(ii)) > Prec   % in this case s2 is at n, and the prob stil wasn't low enough so we need to add nothing new to pout
+                                        SkipPAdd=true;
+                                    end
+                                end
+
+                                if ~SkipPAdd
+                                    % adding the greater-than tail here
+                                    pout(Inds(ii))=pout(Inds(ii))+ 1-binocdf(s2(ii)-1,n(Inds(ii)),p(Inds(ii)));
+                                end
+                            end
+
+                        end
+                    end
+                case 'one'  %one-sided
+                    if any(GreaterInds)
+                        pout(GreaterInds)=1-binocdf(s(GreaterInds)-1,n(GreaterInds),p(GreaterInds));  %just report the prob of getting >= s # of successes
+                    end
+                    if any(~GreaterInds)
+                        pout(~GreaterInds)=binocdf(s(~GreaterInds),n(~GreaterInds),p(~GreaterInds));  %just report the prob of getting <= s # of successes
+                    end
+                otherwise
+                    error(['In myBinomTest, Sided variable is: ' Sided '. Unkown sided value.'])
+            end
+        end
+
+        function varargout=EqArrayAndScalars(varargin)
+            %function varargout=EqArrayAndScalars(varargin)
+            %
+            % This will compare a collection of inputs that must be either scalars or
+            % arrays of the same size. If there is at least one array input, all scalar
+            % inputs will be replicated to be the array of that same size. If there are
+            % two or more array inputs that have different sizes, this will return an
+            % error.
+            %
+            % created by Matthew Nelson on April 13th, 2010
+            % matthew.j.nelson.vumail@gmail.com
+            d=zeros(nargin,1);
+            for ia=1:nargin
+                d(ia)=ndims(varargin{ia});
+            end
+            maxnd=max(d);
+            s=ones(nargin,maxnd);
+
+            for ia=1:nargin
+                s(ia,1:d(ia))=size(varargin{ia});
+            end
+            maxs=max(s);
+            varargout=cell(nargin,1);
+            for ia=1:nargin
+                if ~all(s(ia,:)==maxs)
+                    if ~all(s(ia,:)==1)
+                        error(['Varargin{' num2str(ia) '} needs to be a scalar or equal to the array size of other array inputs.'])
+                    else
+                        varargout{ia}=repmat(varargin{ia},maxs);
+                    end
+                else
+                    varargout{ia}=varargin{ia};
+                end
+            end
+        end
+
     end%method
 end%class
