@@ -55,36 +55,36 @@ DATA-SPECIFIC INFORMATION:
 		
 		1.1. _tracked.csv
 			1.1.1. Number of variables	: 5
-			1.1.2. Number of rows		    : N*45000 frames (N=number of animals)
+			1.1.2. Number of rows		: N*45000 frames (N=number of animals)
 			1.1.3. Variable list:
-				cnt		: row counter (0 - N*45000-1)
-				frame	: corresponding video frame (blocks of N)
-				pos_x	: animal's normalized x-position in video frame (blocks of N)
-				pos_y	: animal's normalized y-position in video frame (blocks of N)
-				id		: current animal ID (N unique entries)
+				cnt			: row counter (0 - N*45000-1)
+				frame			: corresponding video frame (blocks of N)
+				pos_x			: animal's normalized x-position in video frame (blocks of N)
+				pos_y			: animal's normalized y-position in video frame (blocks of N)
+				id			: current animal ID (N unique entries)
 			
 		1.2. _annotation.mat
 			1.2.1. Number of variables: 7
 			1.2.2. Variable list:
 				Arena			  : information on the arena
-					- radius_cm (radius of the arena [cm]
+								- radius_cm (radius of the arena [cm]
 				
 				Comment			: information on which food patch had which quality
 				
 				PatchA			: information on the location and radius of food patch A (see "Comment" for respective quality)
-					- loc (location [x,y])
-					- radius
+								- loc (location [x,y])
+								- radius
 				
 				PatchB			: information on the location and radius of food patch B (see "Comment" for respective quality)
-					- loc (location [x,y])
-					- radius				
+								- loc (location [x,y])
+								- radius				
 				
 				Tracker			: tracking software used. 
 				
-				Transformation	: information on the transformation applied to the data to normalize them (centring, scaling, rotating)
-					- rotation_deg (how was the data rotated to align food patches horizontallz [degree])
-					- px_per_cm (conversion factor between pixels and centimeters)
-					- translation_px (translation of data to center them [x,y])
+				Transformation		: information on the transformation applied to the data to normalize them (centring, scaling, rotating)
+								- rotation_deg (how was the data rotated to align food patches horizontallz [degree])
+								- px_per_cm (conversion factor between pixels and centimeters)
+								- translation_px (translation of data to center them [x,y])
 				
 				Valid			: indicate whether everything is ok (Boolean)
 		
@@ -92,17 +92,17 @@ DATA-SPECIFIC INFORMATION:
 	2. PatchWeights.csv (table)
 	   Table with before and after weights of food patches.
 		
-		2.1. Number of variables: 10
-		2.2. Number of rows	  	: 109
-		2.3. Variable list		  :
-			id		  : trial (<group size><condition><date>)
-			date  	: date (yymmdd)
-			A_loc	  : position ID of patch A
-			A_cond	: condition of patch A (HQ:1, LQ:-1)
-			A_before: weight of patch A [g] before beginning of trial
-			A_after	: weight of patch A [g] after beginning of trial 
-			B_loc	  : position ID of patch A
-			B_cond	: condition of patch B (HQ:1, LQ:-1)
-			B_before: weight of patch B [g] before beginning of trial
-			B_after	: weight of patch B [g] after beginning of trial
+		2.1. Number of variables		: 10
+		2.2. Number of rows	  		: 109
+		2.3. Variable list:
+			id		  		: trial (<group size><condition><date>)
+			date  				: date (yymmdd)
+			A_loc	  			: position ID of patch A
+			A_cond				: condition of patch A (HQ:1, LQ:-1)
+			A_before			: weight of patch A [g] before beginning of trial
+			A_after				: weight of patch A [g] after beginning of trial 
+			B_loc	  			: position ID of patch A
+			B_cond				: condition of patch B (HQ:1, LQ:-1)
+			B_before			: weight of patch B [g] before beginning of trial
+			B_after				: weight of patch B [g] after beginning of trial
 		2.4. Missing data codes : NaN 
