@@ -1,30 +1,26 @@
-%% Information integration for nutritional decision-making in desert locusts
-% Swarms of the migratory desert locust can extend over several hundred
-% square kilometres, and starvation compels this ancient pest to devour
-% everything in its path. Theory suggests that gregarious behaviour
-% benefits foraging efficiency over a wide range of spatial food
-% distributions. However, despite the importance of identifying the
-% processes by which swarms locate and select feeding sites to predict
-% their progression, the role of social cohesion during foraging remains
-% elusive. We investigated the evidence accumulation and information
-% integration processes that underlie locusts' nutritional decision-making
-% by employing a Bayesian formalism on high-resolution tracking data from
-% foraging locusts. We tested individual gregarious animals and groups of
-% different sizes in a 2-choice behavioural assay in which food patch
-% qualities were either different or similar. We then predicted the
-% decisions of individual locusts based on personally acquired and socially
-% derived evidence by disentangling the relative contributions of each
-% information class. Our study suggests that locusts balance incongruent
-% evidence but reinforce congruent ones, resulting in more confident
-% assessments when evidence aligns. We provide new insights into the
-% interplay between personal experience and social context in locust
-% foraging decisions which constitute a powerful empirical system to study
-% local individual decisions and their consequent collective dynamics.
+%% Information integration for decision-making in desert locusts
+% Locust swarms can extend over several hundred kilometers, and starvation 
+% compels this ancient pest to devour everything in its path. Theory 
+% suggests that gregarious behavior benefits foraging efficiency, yet the 
+% role of social cohesion in locust foraging decisions remains elusive. To 
+% this end, we collected high-resolution tracking data of individual and 
+% grouped gregarious desert locusts in a 2-choice behavioral assay with 
+% animals deciding between patches of either similar or different quality. 
+% Carefully maintaining the animals' identities allowed us to monitor what 
+% each individual has experienced and to estimate the leaky accumulation 
+% process of personally acquired and, when available, socially derived 
+% evidence. We fitted these data to a model based on Bayesian estimation 
+% to gain insight into the locust social decision-making system for patch 
+% selection. By disentangling the relative contribution of each information 
+% class, our study suggests that locusts balance incongruent evidence but 
+% reinforce congruent ones. We provide insight into the collective foraging 
+% decisions of social (but non-eusocial) insects and present locusts as a 
+% powerful empirical system to study individual choices and their 
+% consequent collective dynamics.
 %
-% This is the main analysis script.
+% This is the main analysis script
 %
-% Version: 22-Nov-2022 (MATLAB R2022a)
-
+% Version: 15-Jan-2022 (MATLAB R2022a)
 
 % Tidy up
 clc; clear all; close all
@@ -34,13 +30,10 @@ addpath(genpath('altmany-export_fig'))
 % Keep things down
 warning('off')
 
-
-
 %% Settings
 % It is advisable to have a list of the different settings the data
 % analysis is based on. This allows to quickly change metrics, as for
 % example, calculating the mean instead of the median.
-
 
 % ***** SCRIPT BEHAVIOUR *****
 % Bring settings important for the behaviour of this script all the way to
@@ -50,7 +43,6 @@ SET.RecollectData = 1;
 % Plot centered, roatated and normalized raw data. Also, if enabled, allow
 % the user to adjust thresholds for gap filling (see next settings).
 SET.DisplayRawData = 0;
-
 
 % ***** FILES *****
 % Set the path to the folder that contains the tracking results.
@@ -70,7 +62,6 @@ SET.AnnotationFileSuffix = '_annotation.mat';
 SET.PatchWeights = '...\Data\PatchWeights.csv';
 PatchWeightsTable = readtable(SET.PatchWeights);
 
-
 % ***** INFO ON DATA COLLECTION *****
 % Set frame rate of recordings
 SET.FrameRate = 25; %[fps]
@@ -82,7 +73,6 @@ SET.CutAfter = SET.CutAfter*60*SET.FrameRate;
 SET.dArena = 90; %[cm]
 % Angles of patch positions
 SET.PatchAngle = [-90; -150; 150; 90; 30; -30];
-
 
 % ***** DATA ANALYSIS *****
 % Set additional distance to patch edge as tolerance
@@ -139,7 +129,6 @@ SET.ColorHeat = SubFcn.ColMapInferno(1000);
 SET.ConditionNames.Patch = {'EQ', 'UE'};
 SET.ConditionNames.Group = {'N01', 'N05', 'N10', 'N15', 'N30'};
 SET.FigureAppendix = '_raw';
-
 
 %% Collect and pool data
 

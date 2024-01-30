@@ -1,35 +1,27 @@
-%% Information integration for nutritional decision-making in desert locusts
-% Swarms of the migratory desert locust can extend over several hundred
-% square kilometres, and starvation compels this ancient pest to devour
-% everything in its path. Theory suggests that gregarious behaviour
-% benefits foraging efficiency over a wide range of spatial food
-% distributions. However, despite the importance of identifying the
-% processes by which swarms locate and select feeding sites to predict
-% their progression, the role of social cohesion during foraging remains
-% elusive. We investigated the evidence accumulation and information
-% integration processes that underlie locusts' nutritional decision-making
-% by employing a Bayesian formalism on high-resolution tracking data from
-% foraging locusts. We tested individual gregarious animals and groups of
-% different sizes in a 2-choice behavioural assay in which food patch
-% qualities were either different or similar. We then predicted the
-% decisions of individual locusts based on personally acquired and socially
-% derived evidence by disentangling the relative contributions of each
-% information class. Our study suggests that locusts balance incongruent
-% evidence but reinforce congruent ones, resulting in more confident
-% assessments when evidence aligns. We provide new insights into the
-% interplay between personal experience and social context in locust
-% foraging decisions which constitute a powerful empirical system to study
-% local individual decisions and their consequent collective dynamics.
-%
-% This is file contains all helper functions for the main analysis.
-%
-% Version: 16-May-2022 (MATLAB R2022a)
-
 classdef SubFcn
-    %SUBFCN Cointains subfunctions for food patch analysis.
-    % Detailed explanation goes here ...
-    % Version:
-    % 17-Feb-2021 (R2020a) Yannick G??nzel
+    %% Information integration for decision-making in desert locusts
+    % Locust swarms can extend over several hundred kilometers, and starvation
+    % compels this ancient pest to devour everything in its path. Theory
+    % suggests that gregarious behavior benefits foraging efficiency, yet the
+    % role of social cohesion in locust foraging decisions remains elusive. To
+    % this end, we collected high-resolution tracking data of individual and
+    % grouped gregarious desert locusts in a 2-choice behavioral assay with
+    % animals deciding between patches of either similar or different quality.
+    % Carefully maintaining the animals' identities allowed us to monitor what
+    % each individual has experienced and to estimate the leaky accumulation
+    % process of personally acquired and, when available, socially derived
+    % evidence. We fitted these data to a model based on Bayesian estimation
+    % to gain insight into the locust social decision-making system for patch
+    % selection. By disentangling the relative contribution of each information
+    % class, our study suggests that locusts balance incongruent evidence but
+    % reinforce congruent ones. We provide insight into the collective foraging
+    % decisions of social (but non-eusocial) insects and present locusts as a
+    % powerful empirical system to study individual choices and their
+    % consequent collective dynamics.
+    %
+    % This is file contains all helper functions for the main analysis.
+    %
+    % Version: 15-Jan-2022 (MATLAB R2022a)
 
     properties
     end
@@ -2014,10 +2006,26 @@ classdef SubFcn
             % 'two-sample'
             % -------------------------------------------------------------------------
             % A two-sample test can be used to determine whether the means of two given
-            % differ from each other
+            % samples differ from each other
             % The default test statistic is |avg1-avg2| / sqrt(std1/N1 + std2/N2);
             % Inputs:
             %   xSample = 'two-sample'
+            %   z ................ first original sample
+            %   y ................ second original sample
+            %   N_Boot ........... number of resampling. Default is 5000
+            %   seed ............. seed for reproducibility. Default is 1234
+            %   userTestStat ..... custom test statistic with four inputs: (i) sample1,
+            %                      (ii) sample2, (iii) sample size 1, and (iv) sample
+            %                      size 2
+            %
+            % 'two-sample-pairs'
+            % -------------------------------------------------------------------------
+            % A two-sample test can be used to determine whether the
+            % mean pairwise difference between two samples is different from
+            % zero
+            % The default test statistic is |avg(z-y)| / sqrt(std1/N1 + std2/N2);
+            % Inputs:
+            %   xSample = 'two-sample-pairs'
             %   z ................ first original sample
             %   y ................ second original sample
             %   N_Boot ........... number of resampling. Default is 5000
@@ -2068,9 +2076,11 @@ classdef SubFcn
                 % --- default test statistic
                 switch xSample
                     case 'one-sample'
-                        TestStat = @(x1, L_x1, PredetVal) abs(mean(x1) - PredetVal) ./ (std(x1) / L_x1);
+                        TestStat = @(x1, L_x1, PredetVal) abs(mean(x1) - PredetVal) ./ (std(x1) / sqrt(L_x1));
                     case 'two-sample'
                         TestStat = @(x1, x2, L_x1, L_x2) abs(mean(x1) - mean(x2)) ./ sqrt(   var(x1)/L_x1 + var(x2)/L_x2   );
+                    case 'two-sample-pairs'
+                        TestStat = @(x1, L_x1) abs(mean(x1)) ./ (std(x1) / sqrt(L_x1));
                     case 'ranked-consistency'
                         TestStat = @(n,k,r) ((12*n)/(k*(k+1))) * sum( (r-((k+1)/2)).^2 );
                     case 'ks-test'
@@ -2091,7 +2101,9 @@ classdef SubFcn
                     case 'one-sample'
                         y = 0;
                     case 'two-sample'
-                        y = randn(size(z,1), size(z,2));
+                        y = randn(size(z));
+                    case 'two-sample-pairs'
+                        y = zeros(size(z));
                     case 'ranked-consistency'
                         y = 1;
                     case 'ks-test'
@@ -2136,6 +2148,19 @@ classdef SubFcn
                     % bootstrap samples
                     TestStatDistribution.sample = TestStat(z,      y,      length(z), length(y));
                     TestStatDistribution.boot =   TestStat(z_boot, y_boot, length(z), length(y));
+                    % Get Cohen's d (effect size)
+                    c = abs(mean(z)-mean(y)) / std(x);
+                case 'two-sample-pairs'
+                    % Reshape input sample
+                    x = z(:)-y(:);
+                    % Get TestStatDistribution to draw from
+                    x_tilde = x - mean(x);
+                    % Sample from the joined TestStatDistribution
+                    rng(seed)
+                    x_boot = reshape(x_tilde(randsample(1:length(z), length(z)*N_Boot, 'true')), [length(z), N_Boot]);
+                    % Apply test statistic
+                    TestStatDistribution.sample = TestStat(x, length(x));
+                    TestStatDistribution.boot = TestStat(x_boot, size(x_boot,1));
                     % Get Cohen's d (effect size)
                     c = abs(mean(z)-mean(y)) / std(x);
                 case 'ranked-consistency'

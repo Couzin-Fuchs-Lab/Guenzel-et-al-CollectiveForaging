@@ -1,5 +1,5 @@
-GENERAL INFORMATION: Data
--------------------------
+GENERAL INFORMATION: Analysis
+-----------------------------
 
 1. Title of dataset:
 	Information integration for decision-making in desert locusts
@@ -30,7 +30,7 @@ GENERAL INFORMATION: Data
 	This work was completed with the support of the Deutsche Forschungsgemeinschaft (DFG, German Research Foundation) under Germany's Excellence Strategy – EXC 2117 – 422037984.
 
 6. Data and code availability
-	Data were analyzed and plotted using custom-written MATLAB scripts. Analysis code and processed trajectories are available at https://doi.org/10.5281/zenodo.7541780. Custom-written GUI for manually supervised tracking is available at https://github.com/YannickGuenzel/BlobMaster3000
+	Analysis code and processed trajectories are available at https://doi.org/10.5281/zenodo.7541780. Custom-written GUI for manually supervised tracking is available at https://github.com/YannickGuenzel/BlobMaster3000
 
 
 
@@ -49,8 +49,8 @@ DATA & FILE OVERVIEW
 	2. mainFcn_LocustDecisionSystem.m
 	3. mainFcn_LocustDecisionSystem_plot.m		
 	4. mainFcn_LocustFeeding_statistics.m		
-	5. mainFcn_ExampleVideos.m
-
+	5. mainFcn_ExampleVideos.m		
+	
 
 
 
@@ -61,64 +61,61 @@ Locust swarms can extend over several hundred kilometers, and starvation compels
 
 
 
-DATA-SPECIFIC INFORMATION:
+FILE-SPECIFIC INFORMATION:
 --------------------------
-	1. Tracking (folder)
-	   Each trial's data with all tracked animals were saved as a CSV table and a corresponding MAT file containing additional information. File names give insight into the tested group size and experimental condition.
-	   File names are constructed as follows:  <group size><condition><date(yymmdd)>_* 
-	   Thus, the pair of 01EQ20191202_tracked.csv and 01EQ20191202_annotation.mat belonged to a trial with one animal (01) under the equal food condition (EQ) and were collected on February 2nd 2019 (20191202).
-	   Videos were recorded at 25fps for 30 minutes, resulting in 45000 frames.
+	1. ExampleVideo (folder)
+	   This folder contains the raw data for one trial to create an example animation that shows how animals were tracked while maintaining their identities over time.
 		
-		1.1. _tracked.csv
-			1.1.1. Number of variables	: 5
-			1.1.2. Number of rows		: N*45000 frames (N=number of animals)
-			1.1.3. Variable list:
+		1.1. 15UE20191206.mp4
+		     Primary data from December 6th 2019. A video at 25fps with 15 animals foraging under the unequal patch conditions for 30 minutes. The high-quality food is placed in the top left corner of the arena. The low-quality food is placed in the bottom right corner of the arena.
+		
+		1.2. 15UE20191206_annotation.mat
+			1.2.1. Number of variables: 7
+			1.2.2. Variable list:
+				Arena			  	: information on the arena
+									- radius_cm (radius of the arena [cm]
+				Comment				: information on which food patch had which quality
+				PatchA				: information on the location and radius of food patch A (see "Comment" for respective quality)
+									- loc (location [x,y])
+									- radius
+				PatchB				: information on the location and radius of food patch B (see "Comment" for respective quality)
+									- loc (location [x,y])
+									- radius				
+				Tracker				: tracking software used (either TRex or BlobMaster3000). 
+				Transformation		: information on the transformation applied to the data to normalize them (centring, scaling, rotating)
+									- rotation_deg (how was the data rotated to align food patches horizontally [degree])
+									- px_per_cm (conversion factor between pixels and centimeters)
+									- translation_px (translation of data to center them [x,y])
+				Valid				: indicate whether everything is ok (Boolean)
+		
+		1.3. 15UE20191206_tracked.csv
+		     NOTE: tracking data has not been normalized and is in video coordinates.
+			1.3.1. Number of variables	: 5
+			1.3.2. Number of rows		: N*45000 frames (N=number of animals=15)
+			1.3.3. Variable list:
 				cnt					: row counter (0 - N*45000-1)
 				frame				: corresponding video frame (blocks of N)
 				pos_x				: animal's normalized x-position in video frame (blocks of N)
 				pos_y				: animal's normalized y-position in video frame (blocks of N)
 				id					: current animal ID (N unique entries)
-			
-		1.2. _annotation.mat
-			1.2.1. Number of variables: 7
-			1.2.2. Variable list:
-				Arena			  	: information on the arena
-									- radius_cm (radius of the arena [cm]
-				
-				Comment				: information on which food patch had which quality
-				
-				PatchA				: information on the location and radius of food patch A (see "Comment" for respective quality)
-									- loc (location [x,y])
-									- radius
-				
-				PatchB				: information on the location and radius of food patch B (see "Comment" for respective quality)
-									- loc (location [x,y])
-									- radius				
-				
-				Tracker				: tracking software used (either TRex or BlobMaster3000). 
-				
-				Transformation		: information on the transformation applied to the data to normalize them (centring, scaling, rotating)
-									- rotation_deg (how was the data rotated to align food patches horizontally [degree])
-									- px_per_cm (conversion factor between pixels and centimeters)
-									- translation_px (translation of data to center them [x,y])
-				
-				Valid				: indicate whether everything is ok (Boolean)
+	
+	2. mainFcn_ExampleVideos.m
+	   Script for producing a video exemplifying how animals were tracked while maintaining their identities over time
 		
+	3. mainFcn_LocustDecisionSystem.m
+	   This script infers the locust decision-making rule used in patch choice based on a Bayesian formalism. It assumes that mainFcn_LocustFeeding.m has finished successfully and saved pooled data as PooledData.mat
+	
+	4. mainFcn_LocustDecisionSystem_plot.m
+	   This script plots the results of inferring the locust decision-making rule and calculates statistics accordingly. It assumes that mainFcn_LocustDecisionSystem.m finished successfully. 
+	
+	5. mainFcn_LocustFeeding.m
+	   This script pools trials corresponding to group size and experimental condition, performs all analysis steps, and exports raw figures as pdf vector graphics. We saved figures using a toolbox for exporting publication quality figures https://github.com/altmany/export_fig
+	
+	6. mainFcn_LocustFeeding_statistics.m
+	   This script calculates statistics according to the figures created by mainFcn_LocustFeeding.m (assuming it finished successfully).
+	
+	7. SubFcn.m
+	   This class contains several function that are being called during the execution of above-listed scripts.
 		
-	2. PatchWeights.csv (table)
-	   Table with before and after weights of food patches.
-		
-		2.1. Number of variables	: 10
-		2.2. Number of rows	  		: 109
-		2.3. Variable list:
-			id		  				: trial (<group size><condition><date>)
-			date  					: date (yymmdd)
-			A_loc	  				: position ID of patch A
-			A_cond					: condition of patch A (HQ:1, LQ:-1)
-			A_before				: weight of patch A [g] before beginning of trial
-			A_after					: weight of patch A [g] after beginning of trial 
-			B_loc	  				: position ID of patch A
-			B_cond					: condition of patch B (HQ:1, LQ:-1)
-			B_before				: weight of patch B [g] before beginning of trial
-			B_after					: weight of patch B [g] after beginning of trial
-		2.4. Missing data codes 	: NaN 
+	8. SubFcn_LocustDecisionSystem.m
+	   This class contains several function that are being called during the execution of mainFcn_LocustDecisionSystem.m

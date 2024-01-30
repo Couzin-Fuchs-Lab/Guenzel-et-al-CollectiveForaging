@@ -1,31 +1,27 @@
-%% Information integration for nutritional decision-making in desert locusts
-% Swarms of the migratory desert locust can extend over several hundred 
-% square kilometres, and starvation compels this ancient pest to devour 
-% everything in its path. Theory suggests that gregarious behaviour 
-% benefits foraging efficiency over a wide range of spatial food 
-% distributions. However, despite the importance of identifying the 
-% processes by which swarms locate and select feeding sites to predict 
-% their progression, the role of social cohesion during foraging remains 
-% elusive. We investigated the evidence accumulation and information 
-% integration processes that underlie locusts' nutritional decision-making 
-% by employing a Bayesian formalism on high-resolution tracking data from 
-% foraging locusts. We tested individual gregarious animals and groups of 
-% different sizes in a 2-choice behavioural assay in which food patch 
-% qualities were either different or similar. We then predicted the 
-% decisions of individual locusts based on personally acquired and socially 
-% derived evidence by disentangling the relative contributions of each 
-% information class. Our study suggests that locusts balance incongruent 
-% evidence but reinforce congruent ones, resulting in more confident 
-% assessments when evidence aligns. We provide new insights into the 
-% interplay between personal experience and social context in locust 
-% foraging decisions which constitute a powerful empirical system to study 
-% local individual decisions and their consequent collective dynamics.
+%% Information integration for decision-making in desert locusts
+% Locust swarms can extend over several hundred kilometers, and starvation
+% compels this ancient pest to devour everything in its path. Theory
+% suggests that gregarious behavior benefits foraging efficiency, yet the
+% role of social cohesion in locust foraging decisions remains elusive. To
+% this end, we collected high-resolution tracking data of individual and
+% grouped gregarious desert locusts in a 2-choice behavioral assay with
+% animals deciding between patches of either similar or different quality.
+% Carefully maintaining the animals' identities allowed us to monitor what
+% each individual has experienced and to estimate the leaky accumulation
+% process of personally acquired and, when available, socially derived
+% evidence. We fitted these data to a model based on Bayesian estimation
+% to gain insight into the locust social decision-making system for patch
+% selection. By disentangling the relative contribution of each information
+% class, our study suggests that locusts balance incongruent evidence but
+% reinforce congruent ones. We provide insight into the collective foraging
+% decisions of social (but non-eusocial) insects and present locusts as a
+% powerful empirical system to study individual choices and their
+% consequent collective dynamics.
 %
 % This is script creates an example video showing how a group of 15 animals
 % were foraging under the unequal condition
 %
-% Version: 16-May-2022 (MATLAB R2022a)
-
+% Version: 15-Jan-2022 (MATLAB R2022a)
 
 % Tidy up
 clc; clear all; close all
@@ -35,22 +31,17 @@ addpath(genpath('altmany-export_fig'))
 % Keep things down
 warning('off')
 
-
 %% Settings
 SET.ExampleGrp = '15';
 SET.ExampleCond = 'UE';
 SET.ExampleTrialName = '15UE20191206';
 SET.CurrDir = pwd;
-
 SET.VideoName = [SET.CurrDir,'\ExampleVideo\',SET.ExampleTrialName,'.mp4'];
 VidObj = VideoReader(SET.VideoName);
-
 SET.TrackingName = [SET.CurrDir,'\ExampleVideo\',SET.ExampleTrialName,'_tracked.csv'];
 Tracking = readtable(SET.TrackingName);
-
 SET.AnnotationName = [SET.CurrDir,'\ExampleVideo\',SET.ExampleTrialName,'_annotation.mat'];
 Annotation = load(SET.AnnotationName);
-
 SET.InteractionRange = 7; %cm
 SET.ArenaDiameter= 90; %cm
 SET.FrameRate = 25;
@@ -63,23 +54,22 @@ for iOrder = 1:2
 end%iOrder
 SET.MaxDensity = max(max(bins));
 
-
 %% Video
 figure('Color', 'w', 'Units', 'normalized', 'Position', [0.125 0.125 0.5 0.5])
 cnt_Frame = 1;
 for iFrame = 50:50:45000
-    
+
     % Get frame
     frame = read(VidObj, iFrame);
     % Processing
     frame = imadjust(rgb2gray(frame));
     frame = cat(3,frame,frame,frame);
-    
+
     % Get tracking
     idx = find(Tracking.frame == iFrame);
     xPos = Tracking.pos_x(idx);
     yPos = Tracking.pos_y(idx);
-    
+
     subplot(2,4,[1 2 5 6])
     hold on
     imagesc(frame)
@@ -117,42 +107,42 @@ for iFrame = 50:50:45000
             ID_align = 'center';
         end
         % Depict everything
-        text(ID_pos_text(1), ID_pos_text(2), sprintf('%02d', iAni), 'Color', [189 042 132]/255, 'Interpreter', 'none', 'HorizontalAlignment', ID_align)        
+        text(ID_pos_text(1), ID_pos_text(2), sprintf('%02d', iAni), 'Color', [189 042 132]/255, 'Interpreter', 'none', 'HorizontalAlignment', ID_align)
         plot([Tracking.pos_x(idx(iAni)), ID_pos_line(1)],[Tracking.pos_y(idx(iAni)), ID_pos_line(2)], 'Color', [189 042 132]/255, 'LineWidth', 0.5)
     end
-    axis equal    
+    axis equal
     axis off
     xlim([-250, size(frame,1)+250])
     ylim([-250, size(frame,2)+250])
     title(['time: ', sprintf('%03d',iFrame/25), '.0s'])
-    
+
     % ---------------------------------------------------------------------
-    
+
     % Get frame
     frame = read(VidObj, iFrame);
-    
+
     % Get tracking
     idx = find(Tracking.frame == iFrame);
     xPos = floor(Tracking.pos_x(idx));
     yPos = floor(Tracking.pos_y(idx));
-    
+
     % Preallocation for density
     density = zeros(size(frame,1), size(frame,2));
-    
+
     % Fill in locations
     for iAni = 1:length(idx)
         density(xPos(iAni),yPos(iAni)) = 1;
     end
-    
+
     % Smooth
     density_smooth = density;
     for iOrder = 1:2
         density_smooth = imgaussfilt(density_smooth, SET.InteractionRange/(SET.ArenaDiameter/(Annotation.Annotation.ROI.Par(3)*2)));
     end
-    
+
     % Normalize
     density_smooth = density_smooth/SET.MaxDensity;
-    
+
     subplot(2,4,[3 4 7 8])
     hold on
     imagesc(frame)
@@ -161,7 +151,7 @@ for iFrame = 50:50:45000
     colormap(SubFcn.ColMapInferno)
     caxis([0 12])
     hCol = colorbar;
-    hCol.Label.String = 'local density';    
+    hCol.Label.String = 'local density';
     % Indicate patches and arena
     th = 0:pi/50:2*pi;
     plot(Annotation.Annotation.ROI.Par(3) * cos(th) + Annotation.Annotation.ROI.Par(1),  Annotation.Annotation.ROI.Par(3) * sin(th) + Annotation.Annotation.ROI.Par(2), 'Color', [0.75 0.75 0.75])
@@ -195,15 +185,15 @@ for iFrame = 50:50:45000
     % Record video
     F(cnt_Frame) = getframe(gcf) ;
     cnt_Frame = cnt_Frame+1;
-    drawnow    
-    
+    drawnow
+
 
     clf
 end%iFrame
 
 
-%% Create the video 
- 
+%% Create the video
+
 % Writer with 50 fps (2x)
 writerObj = VideoWriter('ExampleVideo_both.mp4', 'MPEG-4');
 writerObj.FrameRate = 50;
